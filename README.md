@@ -38,6 +38,13 @@ the 12th Statistical modeling competition
   - `Q1_POI_Validation_Enhanced.png` (核心区 POI 对数散点图)
   - `Q1_Step6_KDE_Coupling_Validation.png` (高斯核密度多源耦合诊断图)
 
+### 1.4 快速复现
+- 剔除Q1-data中的Shaoguan……2024与2025年的csv文件
+- 导入tif文件（2019~2023年）到Q1-data同目录下，并创建文件夹 例如：`D:\12th_Statistical_modeling-q1-demo-cqx\Q1\data\tif_sources\LongNTL_2019.tif`
+- 运行 `01b_Inject_TIF_to_CSV.py`
+- 运行 `02_RVRI_Synthesis_V5.py`
+- 运行 `03_RVRI_Advanced_Validation.ipynb`
+
 ---
 
 ## 2. 对 `Q1_review.md` 的逐条整改回应
