@@ -1,0 +1,28 @@
+{
+  "method_effectiveness": {
+    "full_sample": {
+      "rows": 396302,
+      "corr_rvri_light": 0.07108482972851345,
+      "corr_rvri_mismatch": 0.675923743688284,
+      "corr_rvri_ndbi": 0.8916604844897478,
+      "corr_rvri_ndvi": -0.8265460116673219
+    },
+    "urban_subset": {
+      "rows": 99076,
+      "ndbi_threshold": -0.14726703031368155,
+      "corr_rvri_light": -0.3513783108224797,
+      "corr_rvri_mismatch": 0.5292813065770999
+    },
+    "core_subset": {
+      "rows": 39631,
+      "ndbi_threshold": -0.07057370109518717,
+      "corr_rvri_light": -0.667930593147634,
+      "corr_rvri_mismatch": 0.719512590321186
+    },
+    "works_for_q1": true
+  },
+  "latest_snapshot_year": 2021,
+  "spatial_moran_i": 0.577092792064343,
+  "poi_spearman": -0.2034277368095689,
+  "ccdm_corr": -0.23827666704239894
+}
