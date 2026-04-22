@@ -1,0 +1,82 @@
+{
+  "quality_audit": [
+    {
+      "source_year": 2019,
+      "rows": 318132,
+      "unique_grids": 79533,
+      "light_zero_rate": 0.926722241082318,
+      "positive_light_rate": 0.07327775891768197,
+      "light_missing_rate": 0.0034325374372901813,
+      "quarter_constant_share": 1.0,
+      "temporal_grain": "annual_replicated",
+      "corr_ndbi_light": 0.24700279532649655,
+      "corr_ndvi_light": -0.2662531434621642,
+      "usable_for_calibration": true,
+      "issues": "quarter-constant light"
+    },
+    {
+      "source_year": 2020,
+      "rows": 318132,
+      "unique_grids": 79533,
+      "light_zero_rate": 0.9138848025347969,
+      "positive_light_rate": 0.08611519746520312,
+      "light_missing_rate": 0.0034325374372901813,
+      "quarter_constant_share": 1.0,
+      "temporal_grain": "annual_replicated",
+      "corr_ndbi_light": 0.24619884312733978,
+      "corr_ndvi_light": -0.2779856280779205,
+      "usable_for_calibration": true,
+      "issues": "quarter-constant light"
+    },
+    {
+      "source_year": 2021,
+      "rows": 318132,
+      "unique_grids": 79533,
+      "light_zero_rate": 0.894421183659613,
+      "positive_light_rate": 0.105578816340387,
+      "light_missing_rate": 0.0034325374372901813,
+      "quarter_constant_share": 1.0,
+      "temporal_grain": "annual_replicated",
+      "corr_ndbi_light": 0.2644905609024407,
+      "corr_ndvi_light": -0.34051543447864424,
+      "usable_for_calibration": true,
+      "issues": "quarter-constant light"
+    },
+    {
+      "source_year": 2022,
+      "rows": 318132,
+      "unique_grids": 79533,
+      "light_zero_rate": 0.9007958960431519,
+      "positive_light_rate": 0.0992041039568481,
+      "light_missing_rate": 0.0034073906428777993,
+      "quarter_constant_share": 1.0,
+      "temporal_grain": "annual_replicated",
+      "corr_ndbi_light": 0.2781181492065748,
+      "corr_ndvi_light": -0.36313912927032216,
+      "usable_for_calibration": true,
+      "issues": "quarter-constant light"
+    },
+    {
+      "source_year": 2023,
+      "rows": 318132,
+      "unique_grids": 79533,
+      "light_zero_rate": 0.8791445060540908,
+      "positive_light_rate": 0.12085549394590925,
+      "light_missing_rate": 0.0034325374372901813,
+      "quarter_constant_share": 1.0,
+      "temporal_grain": "annual_replicated",
+      "corr_ndbi_light": 0.2627507158160099,
+      "corr_ndvi_light": -0.27159749794915117,
+      "usable_for_calibration": true,
+      "issues": "quarter-constant light"
+    }
+  ],
+  "validated_years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "degraded_years": []
+}
