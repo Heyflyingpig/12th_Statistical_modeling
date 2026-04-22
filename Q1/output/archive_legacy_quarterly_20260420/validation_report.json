@@ -1,0 +1,49 @@
+{
+    "metrics": {
+        "null_rate": "15.05%",
+        "pca_explained_variance": "67.39%",
+        "corr_rvri_mismatch": 0.9563079621023697,
+        "corr_rvri_ndbi": 0.6906571509427775,
+        "corr_rvri_light": -0.6980806918373067,
+        "time_coverage": [
+            "2019Q1",
+            "2019Q2",
+            "2019Q3",
+            "2019Q4",
+            "2020Q1",
+            "2020Q2",
+            "2020Q3",
+            "2020Q4",
+            "2021Q1",
+            "2021Q2",
+            "2021Q3",
+            "2021Q4",
+            "2022Q1",
+            "2022Q2",
+            "2022Q3",
+            "2022Q4",
+            "2023Q1",
+            "2023Q2",
+            "2023Q3",
+            "2023Q4"
+        ],
+        "declared_panel_range": "2019Q1-2025Q4"
+    },
+    "pca_loadings": {
+        "pca_original": {
+            "mismatch_gap": 0.6725808616880137,
+            "light_neg": 0.49096706484746444,
+            "ndvi_neg": 0.5537023800978955
+        },
+        "pca_monotonic_abs": {
+            "mismatch_gap": 0.6725808616880137,
+            "light_neg": 0.49096706484746444,
+            "ndvi_neg": 0.5537023800978955
+        }
+    },
+    "risk_state_distribution": {
+        "2": 450401,
+        "1": 450400,
+        "0": 450400
+    }
+}
