@@ -1,19 +1,72 @@
 {
-    "spatial_autocorr": {
-        "global_moran_i": 0.5731335405852657,
-        "p_value": 0.001,
-        "z_score": 697.5982222324642,
-        "hh_count": 27337
+  "data_basis": {
+    "panel_time_grain": "annual",
+    "validated_years": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "latest_snapshot_year": 2023,
+    "total_rows": 397665,
+    "snapshot_rows": 79260
+  },
+  "residential_candidate_filter": {
+    "urban_quantile": 0.75,
+    "urban_ndbi_threshold": -0.1406544186666262,
+    "min_ndvi": 0.1,
+    "snapshot_rows": 79260,
+    "candidate_rows": 8405,
+    "excluded_barren_or_remote_rows": 70855,
+    "positive_light_candidate_rows": 6259,
+    "neighbor_light_context_rows": 8379,
+    "poi_context_rows": 79
+  },
+  "method_effectiveness": {
+    "full_sample": {
+      "rows": 396302,
+      "corr_rvri_light": 0.07108482972851345,
+      "corr_rvri_mismatch": 0.675923743688284,
+      "corr_rvri_ndbi": 0.8916604844897478,
+      "corr_rvri_ndvi": -0.8265460116673219
     },
-    "poi_correlation": 0.3482740781297749,
-    "coupling_coordination": {
-        "ccdm_mean": 0.8238889129768189,
-        "corr_rvri_vs_ccdm": -0.42052453588451083,
-        "ccdm_distribution": {
-            "优质协调": 63322,
-            "严重失调": 293,
-            "勉强协调": 2,
-            "轻度失调": 0
-        }
+    "urban_subset": {
+      "rows": 99076,
+      "ndbi_threshold": -0.14726703031368155,
+      "corr_rvri_light": -0.3513783108224797,
+      "corr_rvri_mismatch": 0.5292813065770999
+    },
+    "core_subset": {
+      "rows": 39631,
+      "ndbi_threshold": -0.07057370109518717,
+      "corr_rvri_light": -0.667930593147634,
+      "corr_rvri_mismatch": 0.719512590321186
+    },
+    "works_for_q1": true
+  },
+  "spatial_autocorr": {
+    "global_moran_i": 0.6255962294616696,
+    "p_value": 0.01,
+    "hh_count": 3210,
+    "rows": 8405
+  },
+  "poi_validation": {
+    "rows": 81,
+    "ndbi_threshold": -0.1406544186666262,
+    "spearman_rvri_poi": -0.2316305826014006,
+    "pearson_rvri_poi_log": -0.20831356881946533
+  },
+  "coupling_coordination": {
+    "rows": 19815,
+    "ndbi_threshold": -0.1406544186666262,
+    "ccdm_mean": 0.17110196286919896,
+    "corr_rvri_vs_ccdm": -0.2593206383185715,
+    "ccdm_distribution": {
+      "严重失调": 13507,
+      "轻度失调": 4891,
+      "勉强协调": 1182,
+      "优质协调": 235
     }
+  }
 }

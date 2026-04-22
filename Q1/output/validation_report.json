@@ -1,57 +1,28 @@
 {
-    "metrics": {
-        "null_rate": "15.78%",
-        "pca_explained_variance": "68.20%",
-        "corr_rvri_mismatch": 0.9630106960738603,
-        "corr_rvri_ndbi": 0.6418440820573966,
-        "corr_rvri_light": -0.7509426240285252,
-        "time_coverage": [
-            "2019Q1",
-            "2019Q2",
-            "2019Q3",
-            "2019Q4",
-            "2020Q1",
-            "2020Q2",
-            "2020Q3",
-            "2020Q4",
-            "2021Q1",
-            "2021Q2",
-            "2021Q3",
-            "2021Q4",
-            "2022Q1",
-            "2022Q2",
-            "2022Q3",
-            "2022Q4",
-            "2023Q1",
-            "2023Q2",
-            "2023Q3",
-            "2023Q4",
-            "2024Q1",
-            "2024Q2",
-            "2024Q3",
-            "2024Q4",
-            "2025Q1",
-            "2025Q2",
-            "2025Q3",
-            "2025Q4"
-        ],
-        "declared_panel_range": "2019Q1-2025Q4"
+  "method_effectiveness": {
+    "full_sample": {
+      "rows": 396302,
+      "corr_rvri_light": 0.07108482972851345,
+      "corr_rvri_mismatch": 0.675923743688284,
+      "corr_rvri_ndbi": 0.8916604844897478,
+      "corr_rvri_ndvi": -0.8265460116673219
     },
-    "pca_loadings": {
-        "pca_original": {
-            "mismatch_gap": 0.6732636655227765,
-            "light_neg": 0.5250018361291096,
-            "ndvi_neg": 0.5206621829438912
-        },
-        "pca_monotonic_abs": {
-            "mismatch_gap": 0.6732636655227765,
-            "light_neg": 0.5250018361291096,
-            "ndvi_neg": 0.5206621829438912
-        }
+    "urban_subset": {
+      "rows": 99076,
+      "ndbi_threshold": -0.14726703031368155,
+      "corr_rvri_light": -0.3513783108224797,
+      "corr_rvri_mismatch": 0.5292813065770999
     },
-    "risk_state_distribution": {
-        "1": 714446,
-        "2": 714446,
-        "0": 714446
-    }
+    "core_subset": {
+      "rows": 39631,
+      "ndbi_threshold": -0.07057370109518717,
+      "corr_rvri_light": -0.667930593147634,
+      "corr_rvri_mismatch": 0.719512590321186
+    },
+    "works_for_q1": true
+  },
+  "latest_snapshot_year": 2023,
+  "spatial_moran_i": 0.6255962294616696,
+  "poi_spearman": -0.2316305826014006,
+  "ccdm_corr": -0.2593206383185715
 }
