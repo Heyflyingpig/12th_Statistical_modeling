@@ -1,261 +1,442 @@
-﻿# 12th_Statistical_modeling
-the 12th Statistical modeling competition
+# Q3 README
 
-## Q1 年度版说明
+## 1. 当前正式口径
 
-更新时间：2026-04-21  
-当前状态：Q1 已从旧的季度口径切换为 `2019-2023` 年度 RVRI 识别链路。
+Q3 现在统一采用 **年度 RVRI** 口径，不再使用“季度状态转移”的旧表述。
 
----
+- 正式研究时间尺度：`2019-2023` 年度
+- 状态变量：`rvri` 与 `risk_state`
+- 研究主线：`Moran's I / LISA -> Markov -> Spatial Markov -> 下一年低转高识别`
 
-## 1. 当前结论
+本次实际运行时，脚本优先查找 `Q1/output/`、`Q1/output1/`、`Q1/output_v1/` 下的年度主表；当前真正被读到并用于实跑的是：
 
-Q1 现在可以继续往下使用，不需要推翻原始思路重做。
+- `Q1/output_v1/Shaoguan_RVRI_Q1_Validated.csv`
+- `Q1/data/scientific_grid_500m.geojson`
 
-但有一个关键前提：
-
-当前夜间灯光虽然已经换成了正确的夜光数据，但时间粒度实际上是“年度夜光复制到季度表”，因此 Q1 的正式建模和验证口径必须统一改成年度版。
-
-也就是说：
-
-1. 第一问可以做，而且 `2019-2023` 五个年份都能进入建模。
-2. 当前方法对 Q1 是奏效的。
-3. 但后续步骤不能再沿用旧的季度验证逻辑。
-4. 对 Q3 只能支撑年度状态转移，不支撑季度状态转移。
+因此，当前 Q3 的结果是基于 **年度版正式表已放在 `output_v1` 下** 的现状生成的。
 
 ---
 
-## 2. 当前正式链路
+## 2. 本次实际运行环境
 
-### 2.1 核心脚本
-
-- `Q1/01b_Inject_TIF_to_CSV.py`
-  负责把年度夜间灯光写入年度 CSV。
-
-- `Q1/02_RVRI_Synthesis.py`
-  当前正式 RVRI 合成入口。
-
-- `Q1/02_RVRI_Synthesis_V5.py`
-  兼容旧入口，内部已转发到新的年度版合成逻辑。
-
-- `Q1/rvri_pipeline.py`
-  年度 RVRI 的核心实现。
-
-- `Q1/03_RVRI_Advanced_Validation.py`
-  新的年度版后验验证脚本，不再依赖旧 notebook 的季度快照逻辑。
-
-### 2.2 当前正式输出
-
-- `Q1/output/Shaoguan_RVRI_Q1_Validated.csv`
-  年度 RVRI 主结果表。
-
-- `Q1/output/Q1_Data_Quality_Audit.json`
-  年度灯光质量审计结果。
-
-- `Q1/output/Q1_RVRI_Model_Metadata.json`
-  PCA 特征、载荷和解释率。
-
-- `Q1/output/Q1_Diagnostic_Full_Report.json`
-  年度版综合诊断报告。
-
-- `Q1/output/validation_report.json`
-  关键指标摘要。
-
-- `Q1/output/Q1_RVRI_Scientific_Check.png`
-- `Q1/output/Q1_LISA_Map.png`
-- `Q1/output/Q1_POI_Validation_Enhanced.png`
-- `Q1/output/Q1_Step6_KDE_Coupling_Validation.png`
-
----
-
-## 3. 当前方法是否奏效
-
-结论：**奏效，但必须按“年度建模 + 建成区验证”来解释。**
-
-### 3.1 为什么不能只看全样本
-
-如果对全市全部格网直接看 `rvri-light` 相关性，结果并不好：
-
-- 全样本 `corr_rvri_light = 0.0711`
-
-这是因为韶关全域格网里存在大量山地、林地和低活跃区，零值夜光会严重稀释“房多灯暗”的住宅风险逻辑。
-
-### 3.2 为什么方法仍然有效
-
-把样本限制到建成区后，逻辑就恢复了：
-
-- 建成区子样本（NDBI 前 25%）：
-  - `corr_rvri_light = -0.3514`
-  - `corr_rvri_mismatch = 0.5293`
-
-- 核心建成区子样本（NDBI 前 10%）：
-  - `corr_rvri_light = -0.6679`
-  - `corr_rvri_mismatch = 0.7195`
-
-因此，当前方法的有效性结论不是“在全市任意格网上都直接成立”，而是：
-
-“在住宅/建成区相关样本上，RVRI 已经能够较好刻画建成强度高但夜间活力不足的风险结构。”
-
----
-
-## 4. 年度版验证结果
-
-当前最新年度诊断基于 `2023` 年快照完成。
-
-### 4.1 方法有效性
-
-- `works_for_q1 = true`
-
-### 4.2 空间聚集性
-
-- 全局 Moran's I：`0.7424`
-- 置换检验 `p = 0.01`
-- `HH` 高风险聚集格网数：`29122`
-
-说明年度版 RVRI 具有显著的空间集聚性，能够支持后续空间分异和扩散分析。
-
-### 4.3 POI 外部效度
-
-在建成区且存在 POI 的格网中：
-
-- Spearman(`rvri`, `poi_count`) = `-0.2316`
-- Pearson(`rvri`, `log(1+poi_count)`) = `-0.2083`
-
-说明商业/生活服务越活跃的区域，空置风险越低，方向是合理的。
-
-### 4.4 耦合协调度
-
-在建成区样本中：
-
-- CCDM 均值：`0.1711`
-- `corr_rvri_vs_ccdm = -0.2593`
-
-说明建筑强度与夜间活力越不协调，RVRI 越高，方向符合研究设定。
-
----
-
-## 5. 当前方法和旧版本的区别
-
-旧版本的问题不是完全不能跑，而是后续验证和对外叙述还停留在季度口径：
-
-1. 旧 `03_RVRI_Advanced_Validation.ipynb` 读取的是 `Shaoguan_RVRI_Long_Panel_Final.csv`
-2. 旧逻辑默认选取 `2023Q4`
-3. README 中曾写“已具备完整季度面板能力，直接赋能 Q3”
-
-这些表述现在都不再适用。
-
-当前新的正式口径是：
-
-1. RVRI 是年度版。
-2. 验证也是年度版。
-3. Q2 可以直接使用。
-4. Q3 只能使用年度状态序列。
-
----
-
-## 6. 快速复现
-
-### Step 1. 写入年度夜光
+本次实跑使用的解释器是：
 
 ```bash
-python Q1/01b_Inject_TIF_to_CSV.py
+D:\Anaconda\python.exe
 ```
 
-### Step 2. 生成年度 RVRI
+一键运行命令：
 
 ```bash
-python Q1/02_RVRI_Synthesis.py
+D:\Anaconda\python.exe Q3\run_q3_all.py
 ```
 
-### Step 3. 运行年度版验证
+分步运行命令：
 
 ```bash
-python Q1/03_RVRI_Advanced_Validation.py
+D:\Anaconda\python.exe Q3\01_prepare_q3_panel.py
+D:\Anaconda\python.exe Q3\02_build_spatial_weights.py
+D:\Anaconda\python.exe Q3\03_spatial_autocorr.py --permutations 99
+D:\Anaconda\python.exe Q3\04_markov_transition.py
+D:\Anaconda\python.exe Q3\05_spatial_markov.py
+D:\Anaconda\python.exe Q3\06_low_to_high_predict.py
 ```
 
 ---
 
-## 7. 对 Q2 / Q3 的接口意义
+## 3. 实现路径
 
-### 对 Q2
 
-当前 `2019-2023` 年度 RVRI 可以直接用于：
+### 3.1 公共底座
 
-- 风险类型识别
-- 老城衰退型 / 新区扩张型区分
-- 空间聚集格局描述
+- `Q3/q3_utils.py`
+  - 统一输入路径解析
+  - 年度面板准备
+  - 空间权重构建
+  - Global Moran's I / Local Moran's I 计算
+  - 空间滞后变量和邻域高风险占比计算
+  - Markov 转移矩阵与 GeoJSON 输出
 
-### 对 Q3
+这里的空间统计实现没有依赖 `libpysal/esda`，而是直接在 `q3_utils.py` 中用：
 
-当前不能再写“季度状态转移”。
+- `Shapely STRtree` 构建 `Queen` 风格 `touches` 邻接
+- `numpy + pandas` 手工实现 Moran/LISA 与 permutation 检验
 
-现在能支撑的是：
+这样做的原因是当前环境里基础科学计算栈可用，但不额外依赖 `libpysal/esda` 也能稳定复现文档要求的算法逻辑。
 
-- `2019-2023` 年度风险状态演化
-- 年度空间扩散
-- 年度状态转移概率
+### 3.2 各步骤脚本
 
-如果后续一定要做季度状态转移，必须重新拿到真正的季度夜间灯光数据。
+- `Q3/01_prepare_q3_panel.py`
+  - 从 Q1 年度主表提取 `grid_id / year / rvri / risk_state / mismatch_gap / ndbi / ndvi / light / district_name`
+  - 生成 `delta_rvri`、`delta_mismatch_gap`
+  - 构造相邻年度转移样本
+
+- `Q3/02_build_spatial_weights.py`
+  - 用 `Q1/data/scientific_grid_500m.geojson` 构建全量 500m 网格邻接关系
+  - 输出节点表与边表
+
+- `Q3/03_spatial_autocorr.py`
+  - 逐年计算 `2019-2023` 的 `Global Moran's I`
+  - 对最新年份计算 `Local Moran's I`
+  - 输出年度趋势图与最新年度 LISA 地图
+
+- `Q3/04_markov_transition.py`
+  - 基于 `(risk_state_t, risk_state_t+1)` 构建一步转移矩阵
+  - 输出总体矩阵、分区县矩阵和 `P^2 / P^3`
+
+- `Q3/05_spatial_markov.py`
+  - 计算 `spatial_lag_rvri` 和 `neighbor_high_ratio`
+  - 将邻域环境分为 `low / mid / high`
+  - 比较不同邻域风险背景下的转移概率
+
+- `Q3/06_low_to_high_predict.py`
+  - 只对 `risk_state = 0` 的样本建模
+  - 标签定义为 `0 -> 2`
+  - 使用 `Pooled Logistic Regression`
+  - 数值变量标准化，类别变量 One-Hot
+  - 回测评估：`2019->2020`、`2020->2021`、`2021->2022` 训练，`2022->2023` 测试
+  - 最终预测：用 `2019->2023` 全部历史转移重新拟合后，对 `2023` 截面输出下一年风险概率
+
+注意：当前 `q3_prediction_report.json` 会同时保留 **时间回测指标** 和 **最终真实预测的打分范围**；而 `low_to_high_prob_next_year.*` 这一组输出，应该始终对应真正的“基于最新年度截面预测下一年”结果。
 
 ---
 
-## 8. Q3/output 图件说明
+## 4. 每一步的实际运行结果
 
-Q3 当前在 `Q3/output/` 下主要有 4 张 PNG 图。它们分别对应空间自相关、空间扩散机制和未来一年低转高预测，可以串起来理解为一条完整分析链。
+### Step 1. 年度面板准备
 
-### 8.1 `Q3_Moran_Trend.png`
+输入：
 
-这是年度全局空间自相关趋势图，展示 `2019-2023` 各年的 `Global Moran's I`。它由 `Q3/03_spatial_autocorr.py` 生成，对应结果表为 `Q3/output/annual_moran_report.csv`。
+- `Q1/output_v1/Shaoguan_RVRI_Q1_Validated.csv`
 
-这张图主要回答“空置风险是否具有稳定的空间集聚”。当前五个年份的 Moran's I 分别为 `0.7227`、`0.7335`、`0.7413`、`0.7297`、`0.7401`，对应置换检验 `p = 0.005`。也就是说，Q3 不是只在某一年偶然出现集聚，而是在 `2019-2023` 连续五年都存在显著正向空间自相关。
+建模算法：
 
-阅读时重点看三点：整条线是否一直在 0 以上；年际波动是否剧烈；最新年份 `2023` 是否仍保持高位。当前图形的结论很明确：韶关住宅空置风险的空间集聚是长期稳定结构，不是短期噪声。
+- `Panel Data Engineering`：按 `grid_id + year` 组织年度面板
+- `Feature Engineering`：构造 `delta_rvri`、`delta_mismatch_gap`
+- `State Transition Sample Construction`：生成 `t -> t+1` 的相邻年度转移样本
 
-### 8.2 `Q3_LISA_Map.png`
+输出：
 
-这是 `2023` 年的局部空间自相关图，由 `Q3/03_spatial_autocorr.py` 生成，对应数据文件为 `Q3/output/q3_lisa_panel.csv`，最新年度图层为 `Q3/output/lisa_cluster_latest.geojson`。
+- `Q3/output/q3_panel.csv`
+- `Q3/output/q3_transition_panel.csv`
+- `Q3/output/q3_panel_metadata.json`
 
-图中 5 类含义如下：
+实际结果：
 
-- `HH`：高风险-高邻域，是高风险集聚核心区。
-- `LL`：低风险-低邻域，是低风险稳定片区。
-- `HL`：高风险-低邻域，是孤立的高风险异常点。
-- `LH`：低风险-高邻域，是高风险片区边缘的过渡带，也是低转高的重要候选区域。
-- `NS`：不显著，表示局部空间自相关不强。
+- 年度面板总行数：`396302`
+- 覆盖格网数：`79353`
+- 年份数：`5`
+- 有效转移样本数：`316927`
+- 年度转移对：`2019->2020`、`2020->2021`、`2021->2022`、`2022->2023`
 
-`2023` 年的分类结果为：`HH = 13591`，`LL = 12358`，`HL = 44`，`LH = 27`，`NS = 53513`。这说明高风险和低风险都已经形成清晰片区，其中 `HH` 是后续治理和监测的重点，`LH` 则是扩散分析里最敏感的边缘地带。
+说明：
 
-### 8.3 `spatial_markov_comparison.png`
+- 这一层已经把 Q1 年度主表转换成 Q3 可直接使用的“状态演化底表”。
 
-这是 Spatial Markov 升级概率对比图，由 `Q3/05_spatial_markov.py` 生成，对应结果文件为 `Q3/output/spatial_markov_matrix.csv` 和 `Q3/output/spatial_diffusion_summary.json`。
+### Step 2. 空间权重构建
 
-图中把邻域环境分为 `low / mid / high` 三档，并比较两类升级概率：
+输入：
 
-- `0->2`：低风险直接升到高风险。
-- `1->2`：中风险升到高风险。
+- `Q1/data/scientific_grid_500m.geojson`
 
-当前结果如下：
+建模算法：
 
-- `0->2` 概率：`low = 0.0067`，`mid = 0.0128`，`high = 0.0303`
-- `1->2` 概率：`low = 0.0757`，`mid = 0.1241`，`high = 0.2101`
+- `Queen Contiguity Spatial Weights`：基于格网边/角接触定义邻接关系
+- `Shapely STRtree Spatial Index`：用空间索引高效查询 `touches` 邻接
+- `Adjacency Graph Construction`：输出节点表、边表和度统计
 
-这张图要表达的核心不是某一个柱子高不高，而是从 `low` 到 `high` 的整体抬升趋势。它说明只要周边进入更高风险的邻域环境，本地格网升级为高风险的概率就会显著增加，因此 Q3 中存在明确的空间扩散机制。
+输出：
 
-### 8.4 `Q3_LowToHigh_Risk_Map.png`
+- `Q3/output/spatial_weight_nodes.csv`
+- `Q3/output/spatial_weights_edges.csv.gz`
+- `Q3/output/spatial_weights_summary.json`
 
-这是 Q3 中唯一的未来预测图，由 `Q3/06_low_to_high_predict.py` 生成。对应表格为 `Q3/output/low_to_high_prob_next_year.csv`，空间图层为 `Q3/output/low_to_high_prob_next_year.geojson`，模型报告为 `Q3/output/q3_prediction_report.json`。
+实际结果：
 
-它表示的是：在 `2023` 年仍处于低风险状态的格网中，哪些最有可能在 `2024` 年发生 `0->2` 的跨级升级。也就是说，这是一张前瞻预测图，不是历史现状图。
+- 节点数：`79533`
+- 有向邻接边数：`629602`
+- 估计无向边数：`314801`
+- 最小邻居数：`3`
+- 最大邻居数：`8`
+- 平均邻居数：`7.9162`
 
-当前模型回测结果为：`ROC-AUC = 0.7317`，`Lift@10% = 3.1086`，满足 Q3 设定的预测门槛。未来预测部分共对 `26420` 个格网打分，其中前 `10%` 的高概率格网共有 `2642` 个，阈值为 `0.0356`，整体平均预测概率为 `0.0157`。
+说明：
 
-阅读这张图时，要重点看高概率格网是否落在 `HH` 核心片区边缘、`LH` 过渡带或高风险邻域占比高的区域。如果这些空间位置和前面的 LISA、Spatial Markov 结论能够相互印证，就说明这张预测图不仅“算出来了”，而且“解释得通”。
+- 这一步已经把 500m 规则格网转成后续 Moran、LISA 和 Spatial Markov 能直接调用的邻接结构。
 
-### 8.5 四张图的关系
+### Step 3. 年度空间自相关
 
-这四张图按逻辑顺序分别回答四个问题：
+建模算法：
 
-1. `Q3_Moran_Trend.png`：有没有稳定的全局空间集聚。
-2. `Q3_LISA_Map.png`：集聚具体落在哪些片区。
-3. `spatial_markov_comparison.png`：邻域高风险会不会推高升级概率。
-4. `Q3_LowToHigh_Risk_Map.png`：未来一年哪些低风险格网最值得优先监测。
+- `Global Moran's I`：检验整体空间自相关强度
+- `Local Moran's I (LISA)`：识别 `HH / LL / HL / LH` 局部集聚类型
+- `Permutation Test`：通过随机置换得到 `p-value` 与显著性判断
+
+输出：
+
+- `Q3/output/annual_moran_report.csv`
+- `Q3/output/q3_lisa_panel.csv`
+- `Q3/output/lisa_cluster_latest.geojson`
+- `Q3/output/Q3_Moran_Trend.png`
+- `Q3/output/Q3_LISA_Map.png`
+
+逐年实际结果：
+
+| 年份 | Moran's I | p-value | HH | LL |
+| --- | ---: | ---: | ---: | ---: |
+| 2019 | 0.7227 | 0.01 | 12946 | 12017 |
+| 2020 | 0.7335 | 0.01 | 13946 | 11576 |
+| 2021 | 0.7413 | 0.01 | 13999 | 10688 |
+| 2022 | 0.7297 | 0.01 | 14060 | 11546 |
+| 2023 | 0.7401 | 0.01 | 13524 | 12107 |
+
+关键判断：
+
+- `2019-2023` 为 `5/5` 年显著正相关
+- 已满足“至少 `4/5` 年 `Moran's I > 0` 且 `p < 0.05`”的成功标准
+- 最新年度 `2023` 仍然显著为正
+
+因此，Q3 关于“空置风险具有空间自相关和空间集聚”的论证是成立的。
+
+### Step 4. 年度 Markov 转移
+
+建模算法：
+
+- `First-Order Markov Chain`：用一步状态转移矩阵刻画年度演化规律
+- `Transition Probability Matrix`：估计 `risk_state_t -> risk_state_t+1` 的条件概率
+- `Matrix Power (P^2 / P^3)`：刻画多期累计演化趋势
+
+输出：
+
+- `Q3/output/markov_transition_matrix.csv`
+- `Q3/output/markov_transition_by_district.csv`
+- `Q3/output/markov_k_step_summary.json`
+
+总体一步转移矩阵 `P`：
+
+| 当前状态 \\ 下一状态 | 0 | 1 | 2 |
+| --- | ---: | ---: | ---: |
+| 0 | 0.8059 | 0.1854 | 0.0087 |
+| 1 | 0.1869 | 0.6912 | 0.1219 |
+| 2 | 0.0072 | 0.1234 | 0.8694 |
+
+关键判断：
+
+- 主对角线占优，状态具有明显持续性
+- `P(2->2) = 0.8694` 明显大于 `P(2->0) = 0.0072`
+- `P(0->2) = 0.0087` 非零，说明存在跨级跃迁
+
+因此，Q3 关于“空置风险具有年度状态转移规律”的论证也是成立的。
+
+### Step 5. Spatial Markov
+
+建模算法：
+
+- `Spatial Lag`：计算 `spatial_lag_rvri`
+- `Neighbor Risk Context Encoding`：用 `neighbor_high_ratio` 将邻域环境分为 `low / mid / high`
+- `Spatial Markov Chain`：比较不同邻域背景下的条件转移概率
+
+输出：
+
+- `Q3/output/q3_panel_spatial.csv`
+- `Q3/output/spatial_markov_matrix.csv`
+- `Q3/output/spatial_markov_comparison.png`
+- `Q3/output/spatial_diffusion_summary.json`
+
+关键对比结果：
+
+- `P(0->2 | high) = 0.0305`
+- `P(0->2 | low) = 0.0067`
+- `P(1->2 | high) = 0.2102`
+- `P(1->2 | low) = 0.0757`
+
+解释：
+
+- 在高风险邻域条件下，低风险格网和中风险格网都更容易继续升级
+- 其中 `0->2` 在高风险邻域下约为低风险邻域的 `4.57` 倍
+
+因此，Q3 关于“风险升级受到周边高风险环境带动”的扩散机制证据是成立的。
+
+### Step 6. 下一年低转高识别
+
+建模算法：
+
+- `Pooled Logistic Regression`：对全部年度低风险样本进行合并建模
+- `Standardization + One-Hot Encoding`：数值变量标准化、类别变量哑变量化
+- `Temporal Holdout Validation`：按时间切分做 `2022->2023` 回测
+- `Future Cross-Section Scoring`：用全历史转移重新拟合后，对 `2023` 截面输出 `2024` 风险打分
+
+输出：
+
+- `Q3/output/low_to_high_prob_next_year.csv`
+- `Q3/output/low_to_high_prob_next_year.geojson`
+- `Q3/output/Q3_LowToHigh_Risk_Map.png`
+- `Q3/output/q3_prediction_report.json`
+
+实际回测划分：
+
+- 训练：`2019->2020`、`2020->2021`、`2021->2022`
+- 测试：`2022->2023`
+
+实际结果：
+
+- 训练样本数：`79258`
+- 测试样本数：`26419`
+- 测试集事件率：`0.95%`
+- `ROC-AUC = 0.7317`
+- `Top 10% hit rate = 2.95%`
+- `Lift@10% = 3.1086`
+
+解释：
+
+- `ROC-AUC >= 0.70` 与 `Lift@10% >= 2` 两条都已经满足，说明该模块已经具备中等强度的判别力与排序筛查价值
+- 当前模型最有解释力的增量特征包括：接近中风险阈值的程度、当前 `mismatch_gap`、空间滞后 `rvri` 和 `light`
+- 但高分格网并不完全等同于 `LH` 边缘带，说明模型抓到的是“综合升级风险”，不应把它过度简化为单一扩散边界图
+
+当前脚本会把这一步拆成两层：
+
+- 一层是 `2022->2023` 的时间回测，用于诚实报告模型判别力
+- 一层是基于 `2023` 截面的真实下一年风险打分，用于输出格网级筛查结果
+
+因此，这一步现在可以写成“已经达到任务设定的回测指标门槛，并可用于重点区域筛查”，但仍要避免夸大成完全成熟的强预测模型。
+
+---
+
+## 5. output 目录里各文件的用途
+
+### 5.1 中间底表
+
+- `q3_panel.csv`
+  - Q3 的年度主底表
+- `q3_transition_panel.csv`
+  - 年度相邻转移样本
+- `q3_panel_spatial.csv`
+  - 在年度主底表上补充了空间滞后、邻域高风险占比等变量
+- `q3_lisa_panel.csv`
+  - 每个格网每年的 LISA 类型结果
+
+### 5.2 空间统计结果
+
+- `annual_moran_report.csv`
+  - `2019-2023` 每年的 Moran's I、p 值和各类聚类数量
+- `lisa_cluster_latest.geojson`
+  - 最新年度 LISA 聚类空间结果，可直接进 GIS
+
+### 5.3 状态转移结果
+
+- `markov_transition_matrix.csv`
+  - 总体一步转移矩阵
+- `markov_transition_by_district.csv`
+  - 各区县一步转移矩阵
+- `markov_k_step_summary.json`
+  - `P`、`P^2`、`P^3` 和关键判断结果
+- `spatial_markov_matrix.csv`
+  - 不同邻域风险档位下的条件转移矩阵
+- `spatial_diffusion_summary.json`
+  - 高邻域风险与低邻域风险的关键对比摘要
+
+### 5.4 概率识别结果
+
+- `low_to_high_prob_next_year.csv`
+  - 基于最新年度截面的下一年格网级预测概率清单
+- `low_to_high_prob_next_year.geojson`
+  - 基于最新年度截面的下一年预测概率空间图层
+- `q3_prediction_report.json`
+  - 同时记录时间回测指标、最终训练范围和下一年预测输出摘要
+
+### 5.5 总汇总文件
+
+- `q3_summary.json`
+  - 汇总了每一步的实际输入、输出和关键指标
+
+---
+
+## 6. output 里有用的图分别代表什么
+
+### 6.1 `Q3_Moran_Trend.png`
+
+这张图展示 `2019-2023` 每年的 `Global Moran's I` 变化趋势。
+
+怎么看：
+
+- 横轴是年份
+- 纵轴是 Moran's I
+- 曲线越稳定地位于 `0` 以上，越说明高风险和低风险不是随机散点，而是长期保持空间聚集
+
+当前图的含义：
+
+- 五个年份都稳定在 `0.72-0.74` 左右
+- 说明空置风险的空间集聚不是某一年的偶发现象，而是连续存在的结构特征
+
+### 6.2 `Q3_LISA_Map.png`
+
+这张图展示 **最新年度 `2023`** 的局部空间聚类类型。
+
+图上的主要类型：
+
+- `HH`：高风险格网周围仍是高风险格网
+- `LL`：低风险格网周围仍是低风险格网
+- `HL`：高风险点被低风险环境包围
+- `LH`：低风险点被高风险环境包围
+- `NS`：不显著
+
+怎么看：
+
+- `HH` 连片区可理解为高风险集聚核心区
+- `HL / LH` 更像风险边缘带、过渡带
+- `LL` 连片区可理解为低风险稳定区
+
+这张图对 Q3 的意义最大，因为它直接回答了“高风险是不是成片出现”，也能为下一步扩散边界识别提供空间参照。
+
+### 6.3 `spatial_markov_comparison.png`
+
+这张图比较的是不同邻域风险背景下的升级概率。
+
+怎么看：
+
+- 横轴是邻域环境分组：`low / mid / high`
+- 两组柱子分别表示：
+  - `0->2`
+  - `1->2`
+- 如果 `high` 档明显更高，就说明高风险片区会对周边产生外溢或带动作用
+
+当前图的含义：
+
+- `0->2` 和 `1->2` 两条升级路径在 `high` 邻域下都明显更高
+- 因此可以把这张图当作“高风险片区边缘外溢”的直观证据图
+
+### 6.4 `Q3_LowToHigh_Risk_Map.png`
+
+这张图是格网级“低风险转高风险概率”地图。
+
+怎么看：
+
+- 颜色越深，表示模型给出的升级概率越高
+- 图中高概率区如果主要沿着现有高风险片区边缘分布，说明模型至少抓住了一部分扩散走廊
+
+需要特别注意：
+
+- 当前这张图应对应 **“基于 `2023` 截面预测下一年”** 的真实预测图
+- 它更适合解释“哪些格网在最新一年已经表现出更高升级倾向，值得优先筛查”
+- 当前回测 `ROC-AUC` 已超过 `0.70`，说明这张图具备一定判别力
+- 但由于高分区并不完全落在 `LH` 边缘带，它更适合写成“综合风险筛查图”，而不是单一空间扩散边界图
+
+---
+
+## 7. 当前最稳妥的结论写法
+
+基于 `2019-2023` 年度 RVRI，Q3 已经通过实跑形成三条较稳固的结论：
+
+1. 空置风险具有显著且持续的空间自相关。
+2. 空置风险具有明显的年度状态持续性与有限跨级跃迁。
+3. 高风险邻域会显著抬升周边格网的升级概率，存在空间扩散机制。
+
+同时也要保留一条审慎结论：
+
+4. 当前“下一年低转高识别”模块已经达到回测指标门槛，可作为重点区域筛查工具使用，但仍应继续优化空间边缘解释力与概率校准。
+
+---
+
+## 8. 一句话总结
+
+Q3 现在已经不是“计划版 README”，而是“按实际代码路径与实际结果更新后的 README”：前 3 个模块已经稳定支撑主体结论，预测模块已跑通并可用作重点区域筛查，但还不能夸大为高精度预测模型。
