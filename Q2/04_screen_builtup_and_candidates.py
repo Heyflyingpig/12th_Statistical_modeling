@@ -21,38 +21,38 @@ REQUIRED_COLUMNS = [
     "risk_high_freq",
 ]
 
+DEFAULT_RESIDENTIAL_MIN_NDVI = 0.10
+
 
 def parse_args() -> argparse.Namespace:
-    """解析命令行参数。"""
     q2_dir = Path(__file__).resolve().parent
     output_dir = q2_dir / "output"
 
     parser = argparse.ArgumentParser(
-        description="筛除非建成区并识别 Q2 空置风险候选格网。"
+        description="Screen built-up grids and vacancy candidates for Q2.",
     )
     parser.add_argument(
         "--input",
         type=Path,
         default=None,
-        help="输入特征表路径，留空时自动识别。",
+        help="Input feature table. Auto-detected when omitted.",
     )
     parser.add_argument(
         "--output",
         type=Path,
         default=output_dir / "Q2_CandidateTable.csv",
-        help="候选格网表输出路径。",
+        help="Output path for the screened candidate table.",
     )
     parser.add_argument(
         "--log",
         type=Path,
         default=output_dir / "logs" / "04_screen_builtup_and_candidates.json",
-        help="步骤日志输出路径。",
+        help="Output path for the step log.",
     )
     return parser.parse_args()
 
 
 def resolve_input(user_input: Path | None, output_dir: Path) -> Path:
-    """识别输入特征表。"""
     if user_input is not None:
         return user_input
 
@@ -64,21 +64,19 @@ def resolve_input(user_input: Path | None, output_dir: Path) -> Path:
         ],
     )
     if path is None:
-        raise FileNotFoundError("未找到 Q2 特征表输入文件。")
+        raise FileNotFoundError("Could not find the Q2 feature table.")
     return path
 
 
 def load_features(path: Path) -> pd.DataFrame:
-    """读取特征表并检查必要字段。"""
     frame = pd.read_csv(path)
     missing = [column for column in REQUIRED_COLUMNS if column not in frame.columns]
     if missing:
-        raise ValueError(f"输入特征表缺少必要字段: {missing}")
+        raise ValueError(f"Input feature table is missing required columns: {missing}")
     return frame
 
 
 def compute_thresholds(frame: pd.DataFrame) -> dict[str, float]:
-    """计算筛选阈值。"""
     valid = frame.copy()
     return {
         "ndbi_2023_q35": float(valid["ndbi_2023"].quantile(0.35)),
@@ -93,8 +91,9 @@ def compute_thresholds(frame: pd.DataFrame) -> dict[str, float]:
 
 
 def screen_candidates(frame: pd.DataFrame, thresholds: dict[str, float]) -> pd.DataFrame:
-    """按文档逻辑筛选建成区与空置风险候选。"""
     screened = frame.copy()
+    light_2023 = screened["light_2023"].fillna(0.0) if "light_2023" in screened.columns else pd.Series(0.0, index=screened.index)
+    poi_count = screened["poi_count"].fillna(0.0) if "poi_count" in screened.columns else pd.Series(0.0, index=screened.index)
 
     builtup_flag = (
         (
@@ -108,7 +107,16 @@ def screen_candidates(frame: pd.DataFrame, thresholds: dict[str, float]) -> pd.D
         & (screened["ndbi_2023"] < thresholds["ndbi_2023_q35"])
     )
 
-    vacancy_candidate_flag = builtup_flag & (
+    residential_flag = (
+        builtup_flag
+        & (screened["ndvi_2023"] >= DEFAULT_RESIDENTIAL_MIN_NDVI)
+        & (
+            light_2023.gt(0)
+            | poi_count.gt(0)
+        )
+    )
+
+    vacancy_candidate_flag = residential_flag & (
         (screened["risk_state_2023"] >= thresholds["risk_state_medium"])
         | (screened["rvri_2023"] >= thresholds["rvri_2023_q65"])
         | (screened["risk_high_freq"] >= max(0.4, thresholds["risk_high_freq_q65"]))
@@ -116,17 +124,21 @@ def screen_candidates(frame: pd.DataFrame, thresholds: dict[str, float]) -> pd.D
     )
 
     screened["builtup_flag"] = builtup_flag
+    screened["residential_flag"] = residential_flag
     screened["vacancy_candidate_flag"] = vacancy_candidate_flag
     screened["screen_status"] = np.where(
         ~screened["builtup_flag"],
         "non_built_filtered",
-        np.where(screened["vacancy_candidate_flag"], "vacancy_candidate", "stable_candidate"),
+        np.where(
+            ~screened["residential_flag"],
+            "non_residential_filtered",
+            np.where(screened["vacancy_candidate_flag"], "vacancy_candidate", "stable_candidate"),
+        ),
     )
     return screened
 
 
 def main() -> None:
-    """主入口。"""
     args = parse_args()
     output_dir = Path(__file__).resolve().parent / "output"
     input_path = resolve_input(args.input, output_dir)
@@ -140,22 +152,26 @@ def main() -> None:
         "output_file": str(args.output),
         "input_rows": int(len(features)),
         "builtup_rows": int(candidates["builtup_flag"].sum()),
+        "residential_rows": int(candidates["residential_flag"].sum()),
         "candidate_rows": int(candidates["vacancy_candidate_flag"].sum()),
         "stable_rows": int((candidates["screen_status"] == "stable_candidate").sum()),
+        "non_residential_rows": int((candidates["screen_status"] == "non_residential_filtered").sum()),
         "non_built_rows": int((candidates["screen_status"] == "non_built_filtered").sum()),
         "thresholds": thresholds,
         "warnings": [],
     }
     write_step_log(args.log, stats)
 
-    print("Q2 第04步完成")
-    print(f"- 输入文件: {input_path}")
-    print(f"- 输出文件: {args.output}")
-    print(f"- 总格网数: {len(features)}")
-    print(f"- 建成区格网数: {stats['builtup_rows']}")
-    print(f"- 候选格网数: {stats['candidate_rows']}")
-    print(f"- 稳定对照格网数: {stats['stable_rows']}")
-    print(f"- 非建成过滤格网数: {stats['non_built_rows']}")
+    print("Q2 step 4 completed.")
+    print(f"- Input file: {input_path}")
+    print(f"- Output file: {args.output}")
+    print(f"- Total rows: {len(features)}")
+    print(f"- Built-up rows: {stats['builtup_rows']}")
+    print(f"- Residential built-up rows: {stats['residential_rows']}")
+    print(f"- Vacancy candidate rows: {stats['candidate_rows']}")
+    print(f"- Stable residential control rows: {stats['stable_rows']}")
+    print(f"- Built-up but non-residential rows: {stats['non_residential_rows']}")
+    print(f"- Non-built filtered rows: {stats['non_built_rows']}")
 
 
 if __name__ == "__main__":
