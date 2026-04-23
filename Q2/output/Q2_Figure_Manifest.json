@@ -1,0 +1,44 @@
+{
+  "font_family": "Microsoft YaHei",
+  "figures_dir": "D:\\统计建模比赛\\12th_Statistical_modeling\\Q2\\output",
+  "overall_counts": [
+    {
+      "q2_type": 0,
+      "grid_count": 29632,
+      "q2_label": "稳定占用型"
+    },
+    {
+      "q2_type": 1,
+      "grid_count": 16427,
+      "q2_label": "老城衰退型空置"
+    },
+    {
+      "q2_type": 2,
+      "grid_count": 18775,
+      "q2_label": "新区扩张型空置"
+    },
+    {
+      "q2_type": 3,
+      "grid_count": 14519,
+      "q2_label": "过渡混合型"
+    }
+  ],
+  "districts": [
+    "乐昌市",
+    "乳源瑶族自治县",
+    "仁化县",
+    "南雄市",
+    "始兴县",
+    "新丰县",
+    "曲江区",
+    "武江区",
+    "浈江区",
+    "翁源县",
+    "边缘争议区"
+  ],
+  "generated_files": [
+    "Q2_Typology_Map_Overall.png",
+    "Q2_Typology_Map_Focus.png",
+    "Q2_Typology_Share_By_District.png"
+  ]
+}
