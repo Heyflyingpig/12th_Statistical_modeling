@@ -24,7 +24,9 @@ PRIMARY_DISTRICT_GEOJSON = DATA_DIR / "shaoguan_districts_official.json"
 DEFAULT_URBAN_QUANTILE = 0.75
 DEFAULT_CORE_QUANTILE = 0.90
 MORAN_PERMUTATIONS = 99
-DEFAULT_RESIDENTIAL_MIN_NDVI = 0.10
+0.05
+DEFAULT_DISPLAY_URBAN_QUANTILE = 0.60
+DEFAULT_DISPLAY_MIN_NDVI = 0.05
 
 plt.rcParams["font.sans-serif"] = ["SimHei"]
 plt.rcParams["axes.unicode_minus"] = False
@@ -188,6 +190,7 @@ def select_residential_candidate_snapshot(
     poi_counts: pd.Series | None = None,
     urban_quantile: float = DEFAULT_URBAN_QUANTILE,
     min_ndvi: float = DEFAULT_RESIDENTIAL_MIN_NDVI,
+    require_settlement_context: bool = True,
 ) -> dict:
     working = snapshot.dropna(subset=["rvri", "ndbi", "ndvi", "light", "col", "row"]).copy()
     if "poi_count" in working.columns:
@@ -213,7 +216,7 @@ def select_residential_candidate_snapshot(
     working["residential_candidate"] = (
         working["passes_builtup"]
         & working["passes_non_barren"]
-        & working["passes_settlement_context"]
+        & (working["passes_settlement_context"] if require_settlement_context else True)
     )
 
     candidates = working[working["residential_candidate"]].copy()
@@ -227,6 +230,7 @@ def select_residential_candidate_snapshot(
         "positive_light_candidate_rows": int(candidates["light"].fillna(0).gt(0).sum()),
         "neighbor_light_context_rows": int(candidates["neighbor_positive_light"].sum()),
         "poi_context_rows": int(candidates["poi_count"].gt(0).sum()),
+        "require_settlement_context": bool(require_settlement_context),
     }
     return {"snapshot": candidates, "summary": summary}
 
@@ -436,6 +440,7 @@ def plot_method_effectiveness(snapshot: pd.DataFrame, output_path: Path) -> None
 
 def plot_lisa_like_map(
     candidate_snapshot: pd.DataFrame,
+    display_snapshot: pd.DataFrame,
     full_snapshot: pd.DataFrame,
     output_path: Path,
     year: int,
@@ -445,9 +450,13 @@ def plot_lisa_like_map(
     colors = {"HH": "#e31a1c", "LL": "#1f78b4", "HL": "#fb9a99", "LH": "#a6cee3"}
     district_geojson_path = district_geojson_path or PRIMARY_DISTRICT_GEOJSON
     candidate_ids = set(candidate_snapshot["grid_id"].astype(str).tolist())
+    display_ids = set(display_snapshot["grid_id"].astype(str).tolist())
     background_snapshot = full_snapshot.copy()
     background_snapshot["grid_id"] = background_snapshot["grid_id"].astype(str)
-    excluded_snapshot = background_snapshot[~background_snapshot["grid_id"].isin(candidate_ids)].copy()
+    excluded_snapshot = background_snapshot[~background_snapshot["grid_id"].isin(display_ids)].copy()
+    display_only_snapshot = background_snapshot[
+        background_snapshot["grid_id"].isin(display_ids) & ~background_snapshot["grid_id"].isin(candidate_ids)
+    ].copy()
 
     plt.figure(figsize=(10, 10))
     ax = plt.gca()
@@ -476,6 +485,16 @@ def plot_lisa_like_map(
             alpha=0.55,
             label="Excluded",
             zorder=3,
+        )
+    if not display_only_snapshot.empty:
+        ax.scatter(
+            display_only_snapshot["cx"],
+            display_only_snapshot["cy"],
+            s=1.4,
+            c="#e6d8ad",
+            alpha=0.60,
+            label="Built-up context",
+            zorder=3.2,
         )
     for cluster, color in colors.items():
         subset = candidate_snapshot[candidate_snapshot["cluster"] == cluster]
@@ -541,6 +560,13 @@ def _write_validation_outputs(
     urban_snapshot = snapshot[snapshot["ndbi"] >= urban_threshold].copy()
     poi_counts = count_pois_by_grid(grid, lattice, poi_features)
     residential_candidates = select_residential_candidate_snapshot(snapshot, poi_counts=poi_counts)
+    display_candidates = select_residential_candidate_snapshot(
+        snapshot,
+        poi_counts=poi_counts,
+        urban_quantile=DEFAULT_DISPLAY_URBAN_QUANTILE,
+        min_ndvi=DEFAULT_DISPLAY_MIN_NDVI,
+        require_settlement_context=False,
+    )
     moran_snapshot = residential_candidates["snapshot"]
     moran = compute_moran_metrics(moran_snapshot)
     poi_validation = compute_poi_validation(snapshot, poi_counts)
@@ -549,6 +575,7 @@ def _write_validation_outputs(
     plot_method_effectiveness(urban_snapshot, output_dir / "Q1_RVRI_Scientific_Check.png")
     plot_lisa_like_map(
         candidate_snapshot=moran["snapshot"],
+        display_snapshot=display_candidates["snapshot"],
         full_snapshot=snapshot,
         output_path=output_dir / "Q1_LISA_Map.png",
         year=snapshot_year,

@@ -21,7 +21,8 @@
     "excluded_barren_or_remote_rows": 71398,
     "positive_light_candidate_rows": 5651,
     "neighbor_light_context_rows": 7843,
-    "poi_context_rows": 83
+    "poi_context_rows": 83,
+    "require_settlement_context": true
   },
   "method_effectiveness": {
     "full_sample": {

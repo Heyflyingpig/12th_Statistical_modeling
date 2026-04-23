@@ -30,7 +30,8 @@
         "excluded_barren_or_remote_rows": 73437,
         "positive_light_candidate_rows": 3937,
         "neighbor_light_context_rows": 5805,
-        "poi_context_rows": 80
+        "poi_context_rows": 80,
+        "require_settlement_context": true
       },
       "method_effectiveness": {
         "full_sample": {
@@ -102,7 +103,8 @@
         "excluded_barren_or_remote_rows": 72585,
         "positive_light_candidate_rows": 4639,
         "neighbor_light_context_rows": 6656,
-        "poi_context_rows": 80
+        "poi_context_rows": 80,
+        "require_settlement_context": true
       },
       "method_effectiveness": {
         "full_sample": {
@@ -174,7 +176,8 @@
         "excluded_barren_or_remote_rows": 71398,
         "positive_light_candidate_rows": 5651,
         "neighbor_light_context_rows": 7843,
-        "poi_context_rows": 83
+        "poi_context_rows": 83,
+        "require_settlement_context": true
       },
       "method_effectiveness": {
         "full_sample": {
@@ -246,7 +249,8 @@
         "excluded_barren_or_remote_rows": 71755,
         "positive_light_candidate_rows": 5279,
         "neighbor_light_context_rows": 7480,
-        "poi_context_rows": 82
+        "poi_context_rows": 82,
+        "require_settlement_context": true
       },
       "method_effectiveness": {
         "full_sample": {
@@ -318,7 +322,8 @@
         "excluded_barren_or_remote_rows": 70855,
         "positive_light_candidate_rows": 6259,
         "neighbor_light_context_rows": 8379,
-        "poi_context_rows": 79
+        "poi_context_rows": 79,
+        "require_settlement_context": true
       },
       "method_effectiveness": {
         "full_sample": {

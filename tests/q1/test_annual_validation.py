@@ -192,6 +192,40 @@ def test_select_residential_candidates_excludes_barren_remote_cells_but_keeps_da
     assert result["summary"]["excluded_barren_or_remote_rows"] == 2
 
 
+def test_select_residential_candidates_can_relax_settlement_context_for_display():
+    module = load_validation_module()
+
+    snapshot = pd.DataFrame(
+        {
+            "grid_id": ["g0", "g1", "g2", "g3"],
+            "col": [0, 3, 4, 5],
+            "row": [1, 0, 0, 0],
+            "ndbi": [0.42, 0.38, 0.34, -0.10],
+            "ndvi": [0.20, 0.31, 0.28, 0.60],
+            "light": [0.0, 1.5, 0.0, 0.0],
+            "rvri": [0.95, 0.72, 0.68, 0.10],
+        }
+    )
+
+    strict_result = module.select_residential_candidate_snapshot(
+        snapshot=snapshot,
+        poi_counts=pd.Series(dtype=float),
+        urban_quantile=0.25,
+        min_ndvi=0.1,
+        require_settlement_context=True,
+    )
+    relaxed_result = module.select_residential_candidate_snapshot(
+        snapshot=snapshot,
+        poi_counts=pd.Series(dtype=float),
+        urban_quantile=0.25,
+        min_ndvi=0.1,
+        require_settlement_context=False,
+    )
+
+    assert set(strict_result["snapshot"]["grid_id"].tolist()) == {"g1", "g2"}
+    assert set(relaxed_result["snapshot"]["grid_id"].tolist()) == {"g0", "g1", "g2"}
+
+
 def test_extract_boundary_rings_supports_polygon_and_multipolygon():
     module = load_validation_module()
 
@@ -340,12 +374,20 @@ def test_plot_lisa_like_map_writes_frame_and_excluded_layers(tmp_path: Path):
             "cluster": ["HH", "LL"],
         }
     )
+    display_snapshot = pd.DataFrame(
+        {
+            "grid_id": ["g0", "g1", "g2"],
+            "cx": [0.5, 1.5, 2.5],
+            "cy": [0.5, 0.5, 0.5],
+        }
+    )
     district_path = tmp_path / "districts.geojson"
     output_path = tmp_path / "lisa.png"
     _build_district_geojson(district_path)
 
     module.plot_lisa_like_map(
         candidate_snapshot=candidate_snapshot,
+        display_snapshot=display_snapshot,
         full_snapshot=full_snapshot,
         output_path=output_path,
         year=2023,
