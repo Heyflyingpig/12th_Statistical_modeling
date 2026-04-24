@@ -1,0 +1,19 @@
+{
+    "spatial_autocorr": {
+        "global_moran_i": 0.5836530280688942,
+        "p_value": 0.001,
+        "z_score": 326.4987366417786,
+        "hh_count": 14544
+    },
+    "poi_correlation": 0.33557934956279833,
+    "coupling_coordination": {
+        "ccdm_mean": 0.8238837259184283,
+        "corr_rvri_vs_ccdm": -0.3522722890165294,
+        "ccdm_distribution": {
+            "优质协调": 31662,
+            "严重失调": 147,
+            "轻度失调": 0,
+            "勉强协调": 0
+        }
+    }
+}

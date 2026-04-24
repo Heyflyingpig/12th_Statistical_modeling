@@ -1,0 +1,413 @@
+{
+  "years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "year_reports": {
+    "2019": {
+      "data_basis": {
+        "panel_time_grain": "annual",
+        "validated_years": [
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ],
+        "latest_snapshot_year": 2019,
+        "total_rows": 397665,
+        "snapshot_rows": 79260
+      },
+      "residential_candidate_filter": {
+        "urban_quantile": 0.75,
+        "urban_ndbi_threshold": -0.15792123406333863,
+        "min_ndvi": 0.1,
+        "snapshot_rows": 79260,
+        "candidate_rows": 5823,
+        "excluded_barren_or_remote_rows": 73437,
+        "positive_light_candidate_rows": 3937,
+        "neighbor_light_context_rows": 5805,
+        "poi_context_rows": 80,
+        "require_settlement_context": true
+      },
+      "method_effectiveness": {
+        "full_sample": {
+          "rows": 396302,
+          "corr_rvri_light": 0.07108482972851345,
+          "corr_rvri_mismatch": 0.675923743688284,
+          "corr_rvri_ndbi": 0.8916604844897478,
+          "corr_rvri_ndvi": -0.8265460116673219
+        },
+        "urban_subset": {
+          "rows": 99076,
+          "ndbi_threshold": -0.14726703031368155,
+          "corr_rvri_light": -0.3513783108224797,
+          "corr_rvri_mismatch": 0.5292813065770999
+        },
+        "core_subset": {
+          "rows": 39631,
+          "ndbi_threshold": -0.07057370109518717,
+          "corr_rvri_light": -0.667930593147634,
+          "corr_rvri_mismatch": 0.719512590321186
+        },
+        "works_for_q1": true
+      },
+      "spatial_autocorr": {
+        "global_moran_i": 0.5097040442472197,
+        "p_value": 0.01,
+        "hh_count": 2079,
+        "rows": 5823
+      },
+      "poi_validation": {
+        "rows": 83,
+        "ndbi_threshold": -0.15792123406333863,
+        "spearman_rvri_poi": -0.22797646222322393,
+        "pearson_rvri_poi_log": -0.26654647072513366
+      },
+      "coupling_coordination": {
+        "rows": 19815,
+        "ndbi_threshold": -0.15792123406333863,
+        "ccdm_mean": 0.12891244642163616,
+        "corr_rvri_vs_ccdm": -0.17577741923080276,
+        "ccdm_distribution": {
+          "严重失调": 15825,
+          "轻度失调": 2920,
+          "勉强协调": 925,
+          "优质协调": 145
+        }
+      }
+    },
+    "2020": {
+      "data_basis": {
+        "panel_time_grain": "annual",
+        "validated_years": [
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ],
+        "latest_snapshot_year": 2020,
+        "total_rows": 397665,
+        "snapshot_rows": 79260
+      },
+      "residential_candidate_filter": {
+        "urban_quantile": 0.75,
+        "urban_ndbi_threshold": -0.1338823845919435,
+        "min_ndvi": 0.1,
+        "snapshot_rows": 79260,
+        "candidate_rows": 6675,
+        "excluded_barren_or_remote_rows": 72585,
+        "positive_light_candidate_rows": 4639,
+        "neighbor_light_context_rows": 6656,
+        "poi_context_rows": 80,
+        "require_settlement_context": true
+      },
+      "method_effectiveness": {
+        "full_sample": {
+          "rows": 396302,
+          "corr_rvri_light": 0.07108482972851345,
+          "corr_rvri_mismatch": 0.675923743688284,
+          "corr_rvri_ndbi": 0.8916604844897478,
+          "corr_rvri_ndvi": -0.8265460116673219
+        },
+        "urban_subset": {
+          "rows": 99076,
+          "ndbi_threshold": -0.14726703031368155,
+          "corr_rvri_light": -0.3513783108224797,
+          "corr_rvri_mismatch": 0.5292813065770999
+        },
+        "core_subset": {
+          "rows": 39631,
+          "ndbi_threshold": -0.07057370109518717,
+          "corr_rvri_light": -0.667930593147634,
+          "corr_rvri_mismatch": 0.719512590321186
+        },
+        "works_for_q1": true
+      },
+      "spatial_autocorr": {
+        "global_moran_i": 0.593700478524037,
+        "p_value": 0.01,
+        "hh_count": 2670,
+        "rows": 6675
+      },
+      "poi_validation": {
+        "rows": 83,
+        "ndbi_threshold": -0.1338823845919435,
+        "spearman_rvri_poi": -0.19310198631909015,
+        "pearson_rvri_poi_log": -0.2243935941912719
+      },
+      "coupling_coordination": {
+        "rows": 19815,
+        "ndbi_threshold": -0.1338823845919435,
+        "ccdm_mean": 0.14025545134610615,
+        "corr_rvri_vs_ccdm": -0.2773085160631951,
+        "ccdm_distribution": {
+          "严重失调": 15102,
+          "轻度失调": 3599,
+          "勉强协调": 1005,
+          "优质协调": 109
+        }
+      }
+    },
+    "2021": {
+      "data_basis": {
+        "panel_time_grain": "annual",
+        "validated_years": [
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ],
+        "latest_snapshot_year": 2021,
+        "total_rows": 397665,
+        "snapshot_rows": 79260
+      },
+      "residential_candidate_filter": {
+        "urban_quantile": 0.75,
+        "urban_ndbi_threshold": -0.1490038765897961,
+        "min_ndvi": 0.1,
+        "snapshot_rows": 79260,
+        "candidate_rows": 7862,
+        "excluded_barren_or_remote_rows": 71398,
+        "positive_light_candidate_rows": 5651,
+        "neighbor_light_context_rows": 7843,
+        "poi_context_rows": 83,
+        "require_settlement_context": true
+      },
+      "method_effectiveness": {
+        "full_sample": {
+          "rows": 396302,
+          "corr_rvri_light": 0.07108482972851345,
+          "corr_rvri_mismatch": 0.675923743688284,
+          "corr_rvri_ndbi": 0.8916604844897478,
+          "corr_rvri_ndvi": -0.8265460116673219
+        },
+        "urban_subset": {
+          "rows": 99076,
+          "ndbi_threshold": -0.14726703031368155,
+          "corr_rvri_light": -0.3513783108224797,
+          "corr_rvri_mismatch": 0.5292813065770999
+        },
+        "core_subset": {
+          "rows": 39631,
+          "ndbi_threshold": -0.07057370109518717,
+          "corr_rvri_light": -0.667930593147634,
+          "corr_rvri_mismatch": 0.719512590321186
+        },
+        "works_for_q1": true
+      },
+      "spatial_autocorr": {
+        "global_moran_i": 0.577092792064343,
+        "p_value": 0.01,
+        "hh_count": 3139,
+        "rows": 7862
+      },
+      "poi_validation": {
+        "rows": 86,
+        "ndbi_threshold": -0.1490038765897961,
+        "spearman_rvri_poi": -0.2034277368095689,
+        "pearson_rvri_poi_log": -0.24729602417568863
+      },
+      "coupling_coordination": {
+        "rows": 19815,
+        "ndbi_threshold": -0.1490038765897961,
+        "ccdm_mean": 0.1594567772720153,
+        "corr_rvri_vs_ccdm": -0.23827666704239894,
+        "ccdm_distribution": {
+          "严重失调": 14108,
+          "轻度失调": 4348,
+          "勉强协调": 1172,
+          "优质协调": 187
+        }
+      }
+    },
+    "2022": {
+      "data_basis": {
+        "panel_time_grain": "annual",
+        "validated_years": [
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ],
+        "latest_snapshot_year": 2022,
+        "total_rows": 397665,
+        "snapshot_rows": 79262
+      },
+      "residential_candidate_filter": {
+        "urban_quantile": 0.75,
+        "urban_ndbi_threshold": -0.15170437556026165,
+        "min_ndvi": 0.1,
+        "snapshot_rows": 79262,
+        "candidate_rows": 7507,
+        "excluded_barren_or_remote_rows": 71755,
+        "positive_light_candidate_rows": 5279,
+        "neighbor_light_context_rows": 7480,
+        "poi_context_rows": 82,
+        "require_settlement_context": true
+      },
+      "method_effectiveness": {
+        "full_sample": {
+          "rows": 396302,
+          "corr_rvri_light": 0.07108482972851345,
+          "corr_rvri_mismatch": 0.675923743688284,
+          "corr_rvri_ndbi": 0.8916604844897478,
+          "corr_rvri_ndvi": -0.8265460116673219
+        },
+        "urban_subset": {
+          "rows": 99076,
+          "ndbi_threshold": -0.14726703031368155,
+          "corr_rvri_light": -0.3513783108224797,
+          "corr_rvri_mismatch": 0.5292813065770999
+        },
+        "core_subset": {
+          "rows": 39631,
+          "ndbi_threshold": -0.07057370109518717,
+          "corr_rvri_light": -0.667930593147634,
+          "corr_rvri_mismatch": 0.719512590321186
+        },
+        "works_for_q1": true
+      },
+      "spatial_autocorr": {
+        "global_moran_i": 0.5230744727205345,
+        "p_value": 0.01,
+        "hh_count": 2792,
+        "rows": 7507
+      },
+      "poi_validation": {
+        "rows": 85,
+        "ndbi_threshold": -0.15170437556026165,
+        "spearman_rvri_poi": -0.220432932665151,
+        "pearson_rvri_poi_log": -0.230388475973149
+      },
+      "coupling_coordination": {
+        "rows": 19816,
+        "ndbi_threshold": -0.15170437556026165,
+        "ccdm_mean": 0.15294851650903174,
+        "corr_rvri_vs_ccdm": -0.1901043902704911,
+        "ccdm_distribution": {
+          "严重失调": 14464,
+          "轻度失调": 4041,
+          "勉强协调": 1108,
+          "优质协调": 203
+        }
+      }
+    },
+    "2023": {
+      "data_basis": {
+        "panel_time_grain": "annual",
+        "validated_years": [
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ],
+        "latest_snapshot_year": 2023,
+        "total_rows": 397665,
+        "snapshot_rows": 79260
+      },
+      "residential_candidate_filter": {
+        "urban_quantile": 0.75,
+        "urban_ndbi_threshold": -0.1406544186666262,
+        "min_ndvi": 0.1,
+        "snapshot_rows": 79260,
+        "candidate_rows": 8405,
+        "excluded_barren_or_remote_rows": 70855,
+        "positive_light_candidate_rows": 6259,
+        "neighbor_light_context_rows": 8379,
+        "poi_context_rows": 79,
+        "require_settlement_context": true
+      },
+      "method_effectiveness": {
+        "full_sample": {
+          "rows": 396302,
+          "corr_rvri_light": 0.07108482972851345,
+          "corr_rvri_mismatch": 0.675923743688284,
+          "corr_rvri_ndbi": 0.8916604844897478,
+          "corr_rvri_ndvi": -0.8265460116673219
+        },
+        "urban_subset": {
+          "rows": 99076,
+          "ndbi_threshold": -0.14726703031368155,
+          "corr_rvri_light": -0.3513783108224797,
+          "corr_rvri_mismatch": 0.5292813065770999
+        },
+        "core_subset": {
+          "rows": 39631,
+          "ndbi_threshold": -0.07057370109518717,
+          "corr_rvri_light": -0.667930593147634,
+          "corr_rvri_mismatch": 0.719512590321186
+        },
+        "works_for_q1": true
+      },
+      "spatial_autocorr": {
+        "global_moran_i": 0.6255962294616696,
+        "p_value": 0.01,
+        "hh_count": 3210,
+        "rows": 8405
+      },
+      "poi_validation": {
+        "rows": 81,
+        "ndbi_threshold": -0.1406544186666262,
+        "spearman_rvri_poi": -0.2316305826014006,
+        "pearson_rvri_poi_log": -0.20831356881946533
+      },
+      "coupling_coordination": {
+        "rows": 19815,
+        "ndbi_threshold": -0.1406544186666262,
+        "ccdm_mean": 0.17110196286919896,
+        "corr_rvri_vs_ccdm": -0.2593206383185715,
+        "ccdm_distribution": {
+          "严重失调": 13507,
+          "轻度失调": 4891,
+          "勉强协调": 1182,
+          "优质协调": 235
+        }
+      }
+    }
+  },
+  "year_summaries": [
+    {
+      "year": 2019,
+      "rows": 79260,
+      "spatial_moran_i": 0.5097040442472197,
+      "poi_spearman": -0.22797646222322393,
+      "ccdm_corr": -0.17577741923080276
+    },
+    {
+      "year": 2020,
+      "rows": 79260,
+      "spatial_moran_i": 0.593700478524037,
+      "poi_spearman": -0.19310198631909015,
+      "ccdm_corr": -0.2773085160631951
+    },
+    {
+      "year": 2021,
+      "rows": 79260,
+      "spatial_moran_i": 0.577092792064343,
+      "poi_spearman": -0.2034277368095689,
+      "ccdm_corr": -0.23827666704239894
+    },
+    {
+      "year": 2022,
+      "rows": 79262,
+      "spatial_moran_i": 0.5230744727205345,
+      "poi_spearman": -0.220432932665151,
+      "ccdm_corr": -0.1901043902704911
+    },
+    {
+      "year": 2023,
+      "rows": 79260,
+      "spatial_moran_i": 0.6255962294616696,
+      "poi_spearman": -0.2316305826014006,
+      "ccdm_corr": -0.2593206383185715
+    }
+  ]
+}

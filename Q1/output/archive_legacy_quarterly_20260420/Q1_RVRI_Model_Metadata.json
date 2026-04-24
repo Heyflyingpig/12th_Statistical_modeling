@@ -1,0 +1,16 @@
+{
+  "features": [
+    "stock_pressure",
+    "eco_deficit",
+    "mismatch_gap"
+  ],
+  "loadings": {
+    "stock_pressure": 0.6412485176605716,
+    "eco_deficit": 0.5884537640341599,
+    "mismatch_gap": 0.49246574113551184
+  },
+  "explained_variance_ratio": 0.7399680069800375,
+  "reference_rows": 396302,
+  "reference_score_min": -7.876163713788879,
+  "reference_score_max": 9.104206546923404
+}
