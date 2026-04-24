@@ -1,0 +1,154 @@
+{
+  "panel_preparation": {
+    "panel_path": "Q3\\output\\q3_panel.csv",
+    "transition_path": "Q3\\output\\q3_transition_panel.csv",
+    "input_path": "Q1\\output_v1\\Shaoguan_RVRI_Q1_Validated.csv",
+    "input_mode": "annual_validated",
+    "rows": 396302,
+    "grid_count": 79353,
+    "year_count": 5,
+    "years": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "prepared_rows": 396302,
+    "prepared_grid_count": 79353,
+    "transition_rows": 316927,
+    "transition_year_pairs": [
+      "2019->2020",
+      "2020->2021",
+      "2021->2022",
+      "2022->2023"
+    ]
+  },
+  "spatial_weights": {
+    "node_count": 79533,
+    "directed_edge_count": 629602,
+    "undirected_edge_count_estimate": 314801,
+    "min_degree": 3,
+    "max_degree": 8,
+    "mean_degree": 7.916236027812355,
+    "grid_path": "Q1\\data\\scientific_grid_500m.geojson",
+    "nodes_path": "Q3\\output\\spatial_weight_nodes.csv",
+    "edges_path": "Q3\\output\\spatial_weights_edges.csv.gz"
+  },
+  "spatial_autocorrelation": {
+    "panel_input": "Q1\\output\\Shaoguan_RVRI_Q1_Validated.csv",
+    "analysis_domain": {
+      "domain_name": "loose_builtup",
+      "rule": {
+        "ndbi_quantile": 0.6,
+        "min_ndvi": 0.05,
+        "settlement_context_required": false
+      },
+      "total_domain_rows": 158092,
+      "yearly": [
+        {
+          "year": 2019,
+          "domain_rows": 31630,
+          "ndbi_threshold": -0.2004357960813095
+        },
+        {
+          "year": 2020,
+          "domain_rows": 31605,
+          "ndbi_threshold": -0.1916905233027396
+        },
+        {
+          "year": 2021,
+          "domain_rows": 31622,
+          "ndbi_threshold": -0.21090181380704717
+        },
+        {
+          "year": 2022,
+          "domain_rows": 31598,
+          "ndbi_threshold": -0.20721292540941255
+        },
+        {
+          "year": 2023,
+          "domain_rows": 31637,
+          "ndbi_threshold": -0.1964447544177939
+        }
+      ]
+    },
+    "full_weight_node_count": 79533,
+    "years": [
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "significant_positive_years": 5,
+    "meets_moran_success_rule": true,
+    "latest_year": 2023,
+    "latest_year_metrics": {
+      "year": 2023.0,
+      "moran_i": 0.5839817460653653,
+      "permutation_p_value": 0.005,
+      "z_score": 160.92146843061417,
+      "hh_count": 4649.0,
+      "ll_count": 2100.0,
+      "hl_count": 44.0,
+      "lh_count": 64.0,
+      "ns_count": 24780.0,
+      "permutations": 199.0,
+      "analysis_domain_rows": 31637.0,
+      "analysis_domain_edge_count": 188560.0
+    },
+    "annual_report_path": "Q3\\output\\annual_moran_report.csv",
+    "lisa_panel_path": "Q3\\output\\q3_lisa_panel.csv",
+    "latest_geojson_path": "Q3\\output\\lisa_cluster_latest.geojson",
+    "lisa_map_path": "Q3\\output\\Q3_LISA_Map.png",
+    "trend_plot_path": "Q3\\output\\Q3_Moran_Trend.png"
+  },
+  "markov_transition": {
+    "overall_matrix_path": "Q3\\output\\markov_transition_matrix.csv",
+    "district_matrix_path": "Q3\\output\\markov_transition_by_district.csv",
+    "k_step_summary_path": "Q3\\output\\markov_k_step_summary.json",
+    "diagonal_dominant": true,
+    "p_2_to_2": 0.8816029143897997,
+    "p_2_to_0": 0.003964427300975035,
+    "p_0_to_2": 0.04296296296296296,
+    "high_risk_persistence_stronger_than_fall": true,
+    "cross_level_jump_exists": true
+  },
+  "spatial_markov": {
+    "panel_spatial_path": "Q3\\output\\q3_panel_spatial.csv",
+    "spatial_markov_matrix_path": "Q3\\output\\spatial_markov_matrix.csv",
+    "comparison_plot_path": "Q3\\output\\spatial_markov_comparison.png",
+    "analysis_domain_rows": 158092,
+    "analysis_domain_transition_rows": 126386,
+    "high_vs_low": {
+      "p_0_to_2_high": 0.0,
+      "p_0_to_2_low": 0.039755351681957186,
+      "p_1_to_2_high": 0.30626262626262624,
+      "p_1_to_2_low": 0.2888157092328333,
+      "high_context_stronger_for_0_to_2": false,
+      "high_context_not_weaker_for_1_to_2": true
+    },
+    "diffusion_summary_path": "Q3\\output\\spatial_diffusion_summary.json"
+  },
+  "non_high_to_high_prediction": {
+    "prediction_report_path": "Q3\\output\\q3_prediction_report.json",
+    "output_csv_path": "Q3\\output\\non_high_to_high_prob_next_year.csv",
+    "output_geojson_path": "Q3\\output\\non_high_to_high_prob_next_year.geojson",
+    "output_map_path": "Q3\\output\\Q3_NonHighToHigh_Risk_Map.png",
+    "projection_csv_path": "Q3\\output\\q3_risk_state_projection_10yr.csv",
+    "projection_json_path": "Q3\\output\\q3_risk_state_projection_10yr.json",
+    "projection_plot_path": "Q3\\output\\Q3_Risk_State_Projection_10yr.png",
+    "prediction_base_year": 2023,
+    "predicted_target_year": 2024,
+    "prediction_scope": "non_high_to_high",
+    "scored_rows": 6373,
+    "roc_auc": 0.6482779031418155,
+    "lift_at_10_percent": 1.5871532278973293,
+    "top_10_percent_hit_rate": 0.4029038112522686,
+    "meets_auc_rule": false,
+    "meets_lift_rule": false,
+    "projection_horizon_years": 10,
+    "projection_final_high_share": 0.7017988859949493
+  }
+}

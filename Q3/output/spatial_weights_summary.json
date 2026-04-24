@@ -1,0 +1,9 @@
+{
+  "node_count": 79533,
+  "directed_edge_count": 624756,
+  "undirected_edge_count_estimate": 312378,
+  "min_degree": 1,
+  "max_degree": 8,
+  "mean_degree": 7.8553053449511525,
+  "grid_path": "Q1\\data\\scientific_grid_500m.geojson"
+}

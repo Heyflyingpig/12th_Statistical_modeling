@@ -1,0 +1,15 @@
+{
+  "panel_spatial_path": "Q3\\output\\q3_panel_spatial.csv",
+  "spatial_markov_matrix_path": "Q3\\output\\spatial_markov_matrix.csv",
+  "comparison_plot_path": "Q3\\output\\spatial_markov_comparison.png",
+  "analysis_domain_rows": 158092,
+  "analysis_domain_transition_rows": 126386,
+  "high_vs_low": {
+    "p_0_to_2_high": 0.0,
+    "p_0_to_2_low": 0.039755351681957186,
+    "p_1_to_2_high": 0.30626262626262624,
+    "p_1_to_2_low": 0.2888157092328333,
+    "high_context_stronger_for_0_to_2": false,
+    "high_context_not_weaker_for_1_to_2": true
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "projection_method": "markov_state_share_projection",
+  "interpretation": "scenario_trend_not_precise_long_range_forecast",
+  "base_year": 2023,
+  "horizon_years": 10,
+  "overall_final_year": 2033,
+  "overall_final_state_share": {
+    "low_share": 0.022694805669938516,
+    "mid_share": 0.27550630833511225,
+    "high_share": 0.7017988859949493
+  },
+  "district_count": 11,
+  "projection_csv_path": "Q3\\output\\q3_risk_state_projection_10yr.csv",
+  "projection_plot_path": "Q3\\output\\Q3_Risk_State_Projection_10yr.png"
+}

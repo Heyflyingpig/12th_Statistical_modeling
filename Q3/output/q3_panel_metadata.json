@@ -1,0 +1,59 @@
+{
+  "input_path": "Q1\\output\\Shaoguan_RVRI_Q1_Validated.csv",
+  "input_mode": "annual_validated",
+  "rows": 396302,
+  "grid_count": 79353,
+  "year_count": 5,
+  "years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "prepared_rows": 396302,
+  "prepared_grid_count": 79353,
+  "analysis_domain": {
+    "domain_name": "loose_builtup",
+    "rule": {
+      "ndbi_quantile": 0.6,
+      "min_ndvi": 0.05,
+      "settlement_context_required": false
+    },
+    "total_domain_rows": 158092,
+    "yearly": [
+      {
+        "year": 2019,
+        "domain_rows": 31630,
+        "ndbi_threshold": -0.2004357960813095
+      },
+      {
+        "year": 2020,
+        "domain_rows": 31605,
+        "ndbi_threshold": -0.1916905233027396
+      },
+      {
+        "year": 2021,
+        "domain_rows": 31622,
+        "ndbi_threshold": -0.21090181380704717
+      },
+      {
+        "year": 2022,
+        "domain_rows": 31598,
+        "ndbi_threshold": -0.20721292540941255
+      },
+      {
+        "year": 2023,
+        "domain_rows": 31637,
+        "ndbi_threshold": -0.1964447544177939
+      }
+    ]
+  },
+  "transition_rows": 316927,
+  "transition_year_pairs": [
+    "2019->2020",
+    "2020->2021",
+    "2021->2022",
+    "2022->2023"
+  ]
+}

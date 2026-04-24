@@ -1,0 +1,99 @@
+{
+  "input_path": "Q1\\output\\Shaoguan_RVRI_Q1_Validated.csv",
+  "analysis_domain": {
+    "domain_name": "loose_builtup",
+    "rule": {
+      "ndbi_quantile": 0.6,
+      "min_ndvi": 0.05,
+      "settlement_context_required": false
+    },
+    "total_domain_rows": 158092,
+    "yearly": [
+      {
+        "year": 2019,
+        "domain_rows": 31630,
+        "ndbi_threshold": -0.2004357960813095
+      },
+      {
+        "year": 2020,
+        "domain_rows": 31605,
+        "ndbi_threshold": -0.1916905233027396
+      },
+      {
+        "year": 2021,
+        "domain_rows": 31622,
+        "ndbi_threshold": -0.21090181380704717
+      },
+      {
+        "year": 2022,
+        "domain_rows": 31598,
+        "ndbi_threshold": -0.20721292540941255
+      },
+      {
+        "year": 2023,
+        "domain_rows": 31637,
+        "ndbi_threshold": -0.1964447544177939
+      }
+    ]
+  },
+  "transition_rows": 126386,
+  "overall_matrix": [
+    [
+      0.626667,
+      0.33037,
+      0.042963
+    ],
+    [
+      0.021086,
+      0.682402,
+      0.296512
+    ],
+    [
+      0.003964,
+      0.114433,
+      0.881603
+    ]
+  ],
+  "P^2": [
+    [
+      0.399848,
+      0.437394,
+      0.162758
+    ],
+    [
+      0.028779,
+      0.506569,
+      0.464652
+    ],
+    [
+      0.008392,
+      0.180283,
+      0.811325
+    ]
+  ],
+  "P^3": [
+    [
+      0.26044,
+      0.449201,
+      0.290359
+    ],
+    [
+      0.030559,
+      0.408363,
+      0.561078
+    ],
+    [
+      0.012277,
+      0.21864,
+      0.769083
+    ]
+  ],
+  "signals": {
+    "diagonal_dominant": true,
+    "p_2_to_2": 0.8816029143897997,
+    "p_2_to_0": 0.003964427300975035,
+    "p_0_to_2": 0.04296296296296296,
+    "high_risk_persistence_stronger_than_fall": true,
+    "cross_level_jump_exists": true
+  }
+}

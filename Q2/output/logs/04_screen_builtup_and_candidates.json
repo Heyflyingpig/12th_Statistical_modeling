@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-04-24T15:50:42",
+  "input_file": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Grid_Features_2019_2023.csv",
+  "output_file": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_CandidateTable.csv",
+  "input_rows": 79353,
+  "builtup_rows": 31637,
+  "residential_rows": 31637,
+  "candidate_rows": 31498,
+  "stable_rows": 139,
+  "non_residential_rows": 0,
+  "non_built_rows": 47716,
+  "thresholds": {
+    "analysis_domain_ndbi_q60": -0.1964447544177939,
+    "ndbi_2023_q35": -0.2611781302832788,
+    "stock_2023_q35": -0.5520616500848856,
+    "ndvi_2023_q75": 0.7913796888072623,
+    "rvri_2023_q65": 0.42928816525997415,
+    "mismatch_mean_q65": 0.2999022733360481,
+    "risk_high_freq_q65": 0.4,
+    "risk_state_high": 2.0,
+    "risk_state_medium": 1.0
+  },
+  "warnings": []
+}

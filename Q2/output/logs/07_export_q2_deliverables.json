@@ -1,0 +1,16 @@
+{
+  "timestamp": "2026-04-24T15:55:09",
+  "input_table": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Classified_GridTable.csv",
+  "input_map": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Classified_GridMap.geojson",
+  "input_report": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Validation_Report.json",
+  "input_type_profile": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Type_Profile.csv",
+  "input_district_summary": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_District_Summary.csv",
+  "master_csv": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Grid_Typology_Master.csv",
+  "master_geojson": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Grid_Typology_Master.geojson",
+  "overall_summary": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Typology_Summary_Overall.csv",
+  "district_summary_output": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Typology_Summary_By_District.csv",
+  "final_dir": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\final",
+  "rows_master": 79353,
+  "rows_map": 79353,
+  "warnings": []
+}

@@ -1,0 +1,69 @@
+{
+  "panel_input": "Q1\\output\\Shaoguan_RVRI_Q1_Validated.csv",
+  "analysis_domain": {
+    "domain_name": "loose_builtup",
+    "rule": {
+      "ndbi_quantile": 0.6,
+      "min_ndvi": 0.05,
+      "settlement_context_required": false
+    },
+    "total_domain_rows": 158092,
+    "yearly": [
+      {
+        "year": 2019,
+        "domain_rows": 31630,
+        "ndbi_threshold": -0.2004357960813095
+      },
+      {
+        "year": 2020,
+        "domain_rows": 31605,
+        "ndbi_threshold": -0.1916905233027396
+      },
+      {
+        "year": 2021,
+        "domain_rows": 31622,
+        "ndbi_threshold": -0.21090181380704717
+      },
+      {
+        "year": 2022,
+        "domain_rows": 31598,
+        "ndbi_threshold": -0.20721292540941255
+      },
+      {
+        "year": 2023,
+        "domain_rows": 31637,
+        "ndbi_threshold": -0.1964447544177939
+      }
+    ]
+  },
+  "full_weight_node_count": 79533,
+  "years": [
+    2019,
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "significant_positive_years": 5,
+  "meets_moran_success_rule": true,
+  "latest_year": 2023,
+  "latest_year_metrics": {
+    "year": 2023.0,
+    "moran_i": 0.5839817460653653,
+    "permutation_p_value": 0.005,
+    "z_score": 160.92146843061417,
+    "hh_count": 4649.0,
+    "ll_count": 2100.0,
+    "hl_count": 44.0,
+    "lh_count": 64.0,
+    "ns_count": 24780.0,
+    "permutations": 199.0,
+    "analysis_domain_rows": 31637.0,
+    "analysis_domain_edge_count": 188560.0
+  },
+  "annual_report_path": "Q3\\output\\annual_moran_report.csv",
+  "lisa_panel_path": "Q3\\output\\q3_lisa_panel.csv",
+  "latest_geojson_path": "Q3\\output\\lisa_cluster_latest.geojson",
+  "lisa_map_path": "Q3\\output\\Q3_LISA_Map.png",
+  "trend_plot_path": "Q3\\output\\Q3_Moran_Trend.png"
+}

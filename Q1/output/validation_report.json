@@ -22,7 +22,7 @@
     "works_for_q1": true
   },
   "latest_snapshot_year": 2023,
-  "spatial_moran_i": 0.6255962294616696,
+  "spatial_moran_i": 0.5839817460653653,
   "poi_spearman": -0.2316305826014006,
   "ccdm_corr": -0.2593206383185715
 }

@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-04-24T15:51:20",
+  "input_file": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_CandidateTable.csv",
+  "spatial_map_file": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_BasePanel_Spatial_2019_2023.geojson",
+  "table_output": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Classified_GridTable.csv",
+  "map_output": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output\\Q2_Classified_GridMap.geojson",
+  "rows": 79353,
+  "candidate_rows": 31498,
+  "type_counts": {
+    "稳定占用型": 47855,
+    "老城衰退型空置": 11384,
+    "新区扩张型空置": 10817,
+    "过渡混合型": 9297
+  },
+  "warnings": [],
+  "map_rows": 79353
+}

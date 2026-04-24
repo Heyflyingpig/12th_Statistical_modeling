@@ -1,0 +1,200 @@
+{
+  "model_spec": {
+    "model_family": "pooled_logistic_regression",
+    "prediction_target": "non_high_to_high",
+    "class_weight": null,
+    "numeric_features": [
+      "rvri",
+      "mismatch_gap",
+      "ndbi",
+      "light",
+      "ndvi",
+      "delta_rvri",
+      "delta_mismatch_gap",
+      "spatial_lag_rvri",
+      "neighbor_high_ratio",
+      "neighbor_count",
+      "is_edge_zone",
+      "rvri_gap_to_mid_threshold",
+      "rvri_to_mid_mean_gap",
+      "rvri_pct_within_low_band",
+      "year_num"
+    ],
+    "categorical_features": [
+      "district_name",
+      "lisa_type",
+      "neighbor_env_level"
+    ]
+  },
+  "backtest_evaluation": {
+    "train_year_pairs": [
+      "2019->2020",
+      "2020->2021",
+      "2021->2022"
+    ],
+    "test_year_pair": "2022->2023",
+    "train_rows": 18208,
+    "test_rows": 5515,
+    "train_positive_rate": 0.3000329525483304,
+    "test_positive_rate": 0.25385312783318226,
+    "roc_auc": 0.6482779031418155,
+    "average_precision": 0.3567580038270599,
+    "brier_score": 0.19113743500196595,
+    "top_10_percent_hit_rate": 0.4029038112522686,
+    "lift_at_10_percent": 1.5871532278973293,
+    "meets_auc_rule": false,
+    "meets_lift_rule": false,
+    "top_decile_rows": 552,
+    "top_decile_edge_share": 0.014492753623188406,
+    "top_decile_lh_share": 0.014492753623188406,
+    "top_decile_high_context_share": 0.23369565217391305,
+    "top_decile_mid_context_share": 0.13768115942028986,
+    "top_decile_mean_probability": 0.3312293089762734,
+    "top_decile_event_rate": 0.40217391304347827
+  },
+  "final_training_scope": {
+    "train_year_pairs": [
+      "2019->2020",
+      "2020->2021",
+      "2021->2022",
+      "2022->2023"
+    ],
+    "train_rows": 23723,
+    "train_positive_rate": 0.28929730641149937
+  },
+  "future_prediction": {
+    "prediction_base_year": 2023,
+    "predicted_target_year": 2024,
+    "prediction_scope": "non_high_to_high",
+    "scored_rows": 6373,
+    "mean_pred_probability": 0.20844977923435593,
+    "top_decile_threshold": 0.34767227401644907,
+    "top_decile_rows": 638,
+    "top_decile_edge_share": 0.001567398119122257,
+    "top_decile_lh_share": 0.001567398119122257,
+    "top_decile_high_context_share": 0.16300940438871472,
+    "top_decile_mid_context_share": 0.17398119122257052,
+    "top_decile_mean_probability": 0.41373282940260947
+  },
+  "top_positive_features": [
+    {
+      "feature": "num__mismatch_gap",
+      "coefficient": 1.938204761908524
+    },
+    {
+      "feature": "num__ndbi",
+      "coefficient": 0.907405124559337
+    },
+    {
+      "feature": "cat__district_name_南雄市",
+      "coefficient": 0.5775914019186896
+    },
+    {
+      "feature": "num__light",
+      "coefficient": 0.19274460497770451
+    },
+    {
+      "feature": "cat__district_name_翁源县",
+      "coefficient": 0.18585145397560515
+    },
+    {
+      "feature": "cat__district_name_始兴县",
+      "coefficient": 0.14242996935217275
+    },
+    {
+      "feature": "cat__district_name_边缘争议区",
+      "coefficient": 0.13745185547593902
+    },
+    {
+      "feature": "num__neighbor_count",
+      "coefficient": 0.11961449546785827
+    },
+    {
+      "feature": "cat__district_name_新丰县",
+      "coefficient": 0.06993098165831885
+    },
+    {
+      "feature": "num__spatial_lag_rvri",
+      "coefficient": 0.047047299866509684
+    },
+    {
+      "feature": "num__delta_mismatch_gap",
+      "coefficient": 0.030639083539521963
+    },
+    {
+      "feature": "cat__lisa_type_LH",
+      "coefficient": -0.008888085235823321
+    }
+  ],
+  "top_negative_features": [
+    {
+      "feature": "num__rvri_to_mid_mean_gap",
+      "coefficient": -0.9365887135550425
+    },
+    {
+      "feature": "num__rvri_pct_within_low_band",
+      "coefficient": -0.7004387525074227
+    },
+    {
+      "feature": "num__ndvi",
+      "coefficient": -0.5918353693141801
+    },
+    {
+      "feature": "cat__district_name_武江区",
+      "coefficient": -0.47057375870147133
+    },
+    {
+      "feature": "num__delta_rvri",
+      "coefficient": -0.3570707738432479
+    },
+    {
+      "feature": "cat__district_name_浈江区",
+      "coefficient": -0.3287559033859952
+    },
+    {
+      "feature": "cat__district_name_仁化县",
+      "coefficient": -0.30337567880212446
+    },
+    {
+      "feature": "cat__district_name_曲江区",
+      "coefficient": -0.295750029150434
+    },
+    {
+      "feature": "cat__lisa_type_NS",
+      "coefficient": -0.2784563919208694
+    },
+    {
+      "feature": "cat__lisa_type_LL",
+      "coefficient": -0.2571222459410138
+    },
+    {
+      "feature": "num__rvri",
+      "coefficient": -0.2482177908002142
+    },
+    {
+      "feature": "cat__neighbor_env_level_low",
+      "coefficient": -0.21599034685801707
+    }
+  ],
+  "state_share_projection": {
+    "projection_method": "markov_state_share_projection",
+    "interpretation": "scenario_trend_not_precise_long_range_forecast",
+    "base_year": 2023,
+    "horizon_years": 10,
+    "overall_final_year": 2033,
+    "overall_final_state_share": {
+      "low_share": 0.022694805669938516,
+      "mid_share": 0.27550630833511225,
+      "high_share": 0.7017988859949493
+    },
+    "district_count": 11,
+    "projection_csv_path": "Q3\\output\\q3_risk_state_projection_10yr.csv",
+    "projection_plot_path": "Q3\\output\\Q3_Risk_State_Projection_10yr.png"
+  },
+  "output_csv_path": "Q3\\output\\non_high_to_high_prob_next_year.csv",
+  "output_geojson_path": "Q3\\output\\non_high_to_high_prob_next_year.geojson",
+  "output_map_path": "Q3\\output\\Q3_NonHighToHigh_Risk_Map.png",
+  "projection_csv_path": "Q3\\output\\q3_risk_state_projection_10yr.csv",
+  "projection_json_path": "Q3\\output\\q3_risk_state_projection_10yr.json",
+  "projection_plot_path": "Q3\\output\\Q3_Risk_State_Projection_10yr.png"
+}

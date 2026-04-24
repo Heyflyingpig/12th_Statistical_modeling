@@ -1,25 +1,25 @@
 {
   "font_family": "Microsoft YaHei",
-  "figures_dir": "D:\\统计建模比赛\\12th_Statistical_modeling\\Q2\\output",
+  "figures_dir": "D:\\Computer\\COMPETITION\\统计建模\\12th_Statistical_modeling\\Q2\\output",
   "overall_counts": [
     {
       "q2_type": 0,
-      "grid_count": 29632,
+      "grid_count": 47855,
       "q2_label": "稳定占用型"
     },
     {
       "q2_type": 1,
-      "grid_count": 16427,
+      "grid_count": 11384,
       "q2_label": "老城衰退型空置"
     },
     {
       "q2_type": 2,
-      "grid_count": 18775,
+      "grid_count": 10817,
       "q2_label": "新区扩张型空置"
     },
     {
       "q2_type": 3,
-      "grid_count": 14519,
+      "grid_count": 9297,
       "q2_label": "过渡混合型"
     }
   ],

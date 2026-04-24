@@ -12,7 +12,23 @@
     "total_rows": 397665,
     "snapshot_rows": 79260
   },
-  "residential_candidate_filter": {
+  "analysis_domain_filter": {
+    "domain_name": "loose_builtup",
+    "rule": {
+      "ndbi_quantile": 0.6,
+      "min_ndvi": 0.05,
+      "settlement_context_required": false
+    },
+    "total_domain_rows": 31637,
+    "yearly": [
+      {
+        "year": 2023,
+        "domain_rows": 31637,
+        "ndbi_threshold": -0.1964447544177939
+      }
+    ]
+  },
+  "strict_residential_candidate_filter": {
     "urban_quantile": 0.75,
     "urban_ndbi_threshold": -0.1406544186666262,
     "min_ndvi": 0.1,
@@ -47,10 +63,10 @@
     "works_for_q1": true
   },
   "spatial_autocorr": {
-    "global_moran_i": 0.6255962294616696,
+    "global_moran_i": 0.5839817460653653,
     "p_value": 0.01,
-    "hh_count": 3210,
-    "rows": 8405
+    "hh_count": 11381,
+    "rows": 31637
   },
   "poi_validation": {
     "rows": 81,
