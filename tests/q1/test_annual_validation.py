@@ -313,7 +313,7 @@ def test_run_validation_by_year_writes_year_directories_and_summary(tmp_path: Pa
     assert summary["years"] == [2022, 2023]
 
 
-def test_run_validation_reports_residential_candidate_subset_for_spatial_autocorr(tmp_path: Path):
+def test_run_validation_reports_unified_analysis_domain_for_spatial_autocorr(tmp_path: Path):
     module = load_validation_module()
 
     grid_ids = [f"g{i}" for i in range(8)]
@@ -353,7 +353,8 @@ def test_run_validation_reports_residential_candidate_subset_for_spatial_autocor
     )
 
     assert report["spatial_autocorr"]["rows"] < report["data_basis"]["snapshot_rows"]
-    assert report["residential_candidate_filter"]["candidate_rows"] == report["spatial_autocorr"]["rows"]
+    assert report["analysis_domain_filter"]["total_domain_rows"] == report["spatial_autocorr"]["rows"]
+    assert report["strict_residential_candidate_filter"]["candidate_rows"] <= report["spatial_autocorr"]["rows"]
 
 
 def test_plot_lisa_like_map_writes_frame_and_excluded_layers(tmp_path: Path):

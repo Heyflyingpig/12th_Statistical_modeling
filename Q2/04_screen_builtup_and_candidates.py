@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+from analysis_domain import ANALYSIS_DOMAIN_MIN_NDVI, ANALYSIS_DOMAIN_NDBI_QUANTILE
 from q2_pipeline_utils import resolve_existing_file, write_step_log
 
 
@@ -21,7 +27,7 @@ REQUIRED_COLUMNS = [
     "risk_high_freq",
 ]
 
-DEFAULT_RESIDENTIAL_MIN_NDVI = 0.10
+DEFAULT_RESIDENTIAL_MIN_NDVI = ANALYSIS_DOMAIN_MIN_NDVI
 
 
 def parse_args() -> argparse.Namespace:
@@ -79,6 +85,7 @@ def load_features(path: Path) -> pd.DataFrame:
 def compute_thresholds(frame: pd.DataFrame) -> dict[str, float]:
     valid = frame.copy()
     return {
+        "analysis_domain_ndbi_q60": float(valid["ndbi_2023"].quantile(ANALYSIS_DOMAIN_NDBI_QUANTILE)),
         "ndbi_2023_q35": float(valid["ndbi_2023"].quantile(0.35)),
         "stock_2023_q35": float(valid["stock_2023"].quantile(0.35)),
         "ndvi_2023_q75": float(valid["ndvi_2023"].quantile(0.75)),
@@ -92,29 +99,12 @@ def compute_thresholds(frame: pd.DataFrame) -> dict[str, float]:
 
 def screen_candidates(frame: pd.DataFrame, thresholds: dict[str, float]) -> pd.DataFrame:
     screened = frame.copy()
-    light_2023 = screened["light_2023"].fillna(0.0) if "light_2023" in screened.columns else pd.Series(0.0, index=screened.index)
-    poi_count = screened["poi_count"].fillna(0.0) if "poi_count" in screened.columns else pd.Series(0.0, index=screened.index)
-
     builtup_flag = (
-        (
-            screened["ndbi_2023"] >= thresholds["ndbi_2023_q35"]
-        )
-        | (
-            screened["stock_2023"] >= thresholds["stock_2023_q35"]
-        )
-    ) & ~(
-        (screened["ndvi_2023"] >= thresholds["ndvi_2023_q75"])
-        & (screened["ndbi_2023"] < thresholds["ndbi_2023_q35"])
+        screened["ndbi_2023"].ge(thresholds["analysis_domain_ndbi_q60"])
+        & screened["ndvi_2023"].ge(DEFAULT_RESIDENTIAL_MIN_NDVI)
     )
 
-    residential_flag = (
-        builtup_flag
-        & (screened["ndvi_2023"] >= DEFAULT_RESIDENTIAL_MIN_NDVI)
-        & (
-            light_2023.gt(0)
-            | poi_count.gt(0)
-        )
-    )
+    residential_flag = builtup_flag.copy()
 
     vacancy_candidate_flag = residential_flag & (
         (screened["risk_state_2023"] >= thresholds["risk_state_medium"])
@@ -125,6 +115,8 @@ def screen_candidates(frame: pd.DataFrame, thresholds: dict[str, float]) -> pd.D
 
     screened["builtup_flag"] = builtup_flag
     screened["residential_flag"] = residential_flag
+    screened["analysis_domain"] = np.where(residential_flag, "loose_builtup", "outside_domain")
+    screened["in_analysis_domain"] = residential_flag
     screened["vacancy_candidate_flag"] = vacancy_candidate_flag
     screened["screen_status"] = np.where(
         ~screened["builtup_flag"],

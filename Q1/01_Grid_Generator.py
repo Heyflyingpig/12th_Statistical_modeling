@@ -85,7 +85,6 @@ def create_ultimate_grid():
     fig, ax = plt.subplots(figsize=(12, 12))
     city.plot(ax=ax, color='#f2f2f2', edgecolor='#333333', linewidth=0.5)
     final_grid.plot(ax=ax, facecolor='none', edgecolor='blue', linewidth=0.02, alpha=0.3)
-    plt.title(f"Shaoguan 500m Scientific Grid\nTotal Units: {grid_count} (Check for full coverage)")
     plt.savefig(PREVIEW_PATH, dpi=300, bbox_inches='tight')
 
     # 7. 导出

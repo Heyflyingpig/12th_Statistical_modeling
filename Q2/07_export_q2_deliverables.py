@@ -5,7 +5,6 @@ import json
 import shutil
 from pathlib import Path
 
-import geopandas as gpd
 import pandas as pd
 
 from q2_pipeline_utils import resolve_existing_file, write_step_log
@@ -88,8 +87,9 @@ def main() -> None:
     classified_table = pd.read_csv(table_path)
     classified_table.to_csv(args.master_csv, index=False, encoding="utf-8-sig")
 
-    classified_map = gpd.read_file(map_path)
-    classified_map.to_file(args.master_geojson, driver="GeoJSON")
+    shutil.copy2(map_path, args.master_geojson)
+    map_payload = json.loads(args.master_geojson.read_text(encoding="utf-8"))
+    map_rows = len(map_payload.get("features", []))
 
     type_profile = pd.read_csv(type_profile_path)
     overall_summary = build_overall_summary(type_profile)
@@ -119,7 +119,7 @@ def main() -> None:
         "district_summary_output": str(args.district_summary_output),
         "final_dir": str(final_dir),
         "rows_master": int(len(classified_table)),
-        "rows_map": int(len(classified_map)),
+        "rows_map": int(map_rows),
         "warnings": warnings,
     }
     write_step_log(args.log, log_payload)

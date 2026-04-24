@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -8,8 +9,13 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
+
+from analysis_domain import attach_unified_analysis_domain, summarize_unified_analysis_domain
+
+
 Q1_DIR = BASE_DIR / "Q1"
 DATA_DIR = Q1_DIR / "data"
 OUTPUT_DIR = Q1_DIR / "output"
@@ -24,7 +30,7 @@ PRIMARY_DISTRICT_GEOJSON = DATA_DIR / "shaoguan_districts_official.json"
 DEFAULT_URBAN_QUANTILE = 0.75
 DEFAULT_CORE_QUANTILE = 0.90
 MORAN_PERMUTATIONS = 99
-0.05
+DEFAULT_RESIDENTIAL_MIN_NDVI = 0.10
 DEFAULT_DISPLAY_URBAN_QUANTILE = 0.60
 DEFAULT_DISPLAY_MIN_NDVI = 0.05
 
@@ -329,21 +335,33 @@ def compute_moran_metrics(snapshot: pd.DataFrame, permutations: int = MORAN_PERM
             "snapshot": valid,
         }
 
-    numerator = float(np.sum(centered[src_arr] * centered[dst_arr]))
-    denominator = float(np.sum(centered * centered))
-    moran_i = float((len(values) / len(src_arr)) * (numerator / denominator))
-
+    degree = np.bincount(src_arr, minlength=len(values)).astype(float)
     neighbor_sum = np.bincount(src_arr, weights=centered[dst_arr], minlength=len(values))
-    neighbor_count = np.bincount(src_arr, minlength=len(values))
-    lag = np.divide(neighbor_sum, neighbor_count, out=np.zeros_like(neighbor_sum), where=neighbor_count > 0)
+    lag = np.divide(
+        neighbor_sum,
+        degree,
+        out=np.zeros(len(values), dtype=float),
+        where=degree > 0,
+    )
+    non_island = degree > 0
+    s0 = float(non_island.sum())
+    denominator = float(np.sum(centered * centered))
+    moran_i = float((len(values) / s0) * np.dot(centered[non_island], lag[non_island]) / denominator)
 
     rng = np.random.default_rng(42)
     permuted_stats = []
     for _ in range(permutations):
         shuffled = rng.permutation(centered)
-        permuted_stats.append(float(np.sum(shuffled[src_arr] * shuffled[dst_arr])))
+        shuffled_neighbor_sum = np.bincount(src_arr, weights=shuffled[dst_arr], minlength=len(values))
+        shuffled_lag = np.divide(
+            shuffled_neighbor_sum,
+            degree,
+            out=np.zeros(len(values), dtype=float),
+            where=degree > 0,
+        )
+        permuted_stats.append(float((len(values) / s0) * np.dot(shuffled[non_island], shuffled_lag[non_island]) / denominator))
     permuted_stats_arr = np.asarray(permuted_stats)
-    p_value = float((np.sum(np.abs(permuted_stats_arr) >= abs(numerator)) + 1) / (len(permuted_stats_arr) + 1))
+    p_value = float((np.sum(np.abs(permuted_stats_arr) >= abs(moran_i)) + 1) / (len(permuted_stats_arr) + 1))
 
     clusters = np.where(
         centered > 0,
@@ -430,7 +448,6 @@ def plot_method_effectiveness(snapshot: pd.DataFrame, output_path: Path) -> None
     plt.figure(figsize=(10, 6))
     sample = snapshot.sample(min(4000, len(snapshot)), random_state=42)
     sns.scatterplot(data=sample, x="light", y="rvri", hue="ndbi", palette="viridis", alpha=0.35, s=18, linewidth=0)
-    plt.title("Q1 Annual Internal Check: Nighttime Light vs RVRI (Built-up Subset)")
     plt.xlabel("Nighttime Light")
     plt.ylabel("RVRI")
     plt.tight_layout()
@@ -464,7 +481,7 @@ def plot_lisa_like_map(
     if district_geojson_path.exists():
         district_geojson = json.loads(district_geojson_path.read_text(encoding="utf-8"))
         for ring in extract_boundary_rings(district_geojson.get("features", [])):
-            ax.plot(ring[:, 0], ring[:, 1], color="#2f2f2f", linewidth=0.8, alpha=0.9, zorder=1)
+            ax.plot(ring[:, 0], ring[:, 1], color="#000000", linewidth=0.85, alpha=0.95, zorder=5)
 
     if not background_snapshot.empty:
         ax.scatter(
@@ -500,8 +517,10 @@ def plot_lisa_like_map(
         subset = candidate_snapshot[candidate_snapshot["cluster"] == cluster]
         if not subset.empty:
             ax.scatter(subset["cx"], subset["cy"], s=3, c=color, label=cluster, alpha=0.75, zorder=4)
-    ax.legend(title="Layer", loc="lower left")
-    ax.set_title(f"Q1 Annual Residential-Candidate Spatial Clusters ({year})\nGlobal Moran's I = {moran_i:.3f}")
+    from matplotlib.patches import Patch
+
+    handles = [Patch(facecolor=colors[item], edgecolor="none", label=item) for item in ["LL", "LH", "HL", "HH"]]
+    ax.legend(handles=handles, loc="lower left", frameon=True, title="LISA Type")
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     ax.set_aspect("equal", adjustable="box")
@@ -519,7 +538,6 @@ def plot_poi_validation(snapshot: pd.DataFrame, output_path: Path) -> None:
         scatter_kws={"alpha": 0.35, "s": 20, "color": "#2c7bb6"},
         line_kws={"color": "#d7191c"},
     )
-    plt.title("Q1 Annual External Validity: log(1 + POI count) vs RVRI")
     plt.xlabel("log(1 + POI count)")
     plt.ylabel("RVRI")
     plt.tight_layout()
@@ -537,7 +555,6 @@ def plot_coupling_validation(snapshot: pd.DataFrame, output_path: Path) -> None:
         color="#2c7fb8",
         height=8,
     )
-    grid.fig.suptitle("Q1 Annual Coupling Check: Nighttime Light vs NDBI", y=1.02)
     grid.set_axis_labels("Nighttime Light", "NDBI")
     plt.tight_layout()
     grid.fig.savefig(output_path, dpi=300)
@@ -559,7 +576,9 @@ def _write_validation_outputs(
     urban_threshold = effectiveness["urban_subset"]["ndbi_threshold"]
     urban_snapshot = snapshot[snapshot["ndbi"] >= urban_threshold].copy()
     poi_counts = count_pois_by_grid(grid, lattice, poi_features)
+    snapshot = attach_unified_analysis_domain(snapshot, year_col="source_year")
     residential_candidates = select_residential_candidate_snapshot(snapshot, poi_counts=poi_counts)
+    analysis_domain = snapshot[snapshot["in_analysis_domain"].fillna(False)].copy()
     display_candidates = select_residential_candidate_snapshot(
         snapshot,
         poi_counts=poi_counts,
@@ -567,7 +586,7 @@ def _write_validation_outputs(
         min_ndvi=DEFAULT_DISPLAY_MIN_NDVI,
         require_settlement_context=False,
     )
-    moran_snapshot = residential_candidates["snapshot"]
+    moran_snapshot = analysis_domain
     moran = compute_moran_metrics(moran_snapshot)
     poi_validation = compute_poi_validation(snapshot, poi_counts)
     coupling = compute_coupling_metrics(snapshot)
@@ -592,7 +611,8 @@ def _write_validation_outputs(
             "total_rows": int(len(merged)),
             "snapshot_rows": int(len(snapshot)),
         },
-        "residential_candidate_filter": residential_candidates["summary"],
+        "analysis_domain_filter": summarize_unified_analysis_domain(snapshot, year_col="source_year"),
+        "strict_residential_candidate_filter": residential_candidates["summary"],
         "method_effectiveness": effectiveness,
         "spatial_autocorr": moran["summary"],
         "poi_validation": poi_validation["summary"],

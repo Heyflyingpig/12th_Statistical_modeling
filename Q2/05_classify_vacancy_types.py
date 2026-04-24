@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
-import geopandas as gpd
 import numpy as np
 import pandas as pd
 
@@ -163,12 +163,35 @@ def classify(frame: pd.DataFrame) -> pd.DataFrame:
 
 def build_map(table: pd.DataFrame, spatial_map_path: Path, map_output: Path) -> dict:
     """将分类结果回写到 GeoJSON。"""
-    spatial_gdf = gpd.read_file(spatial_map_path)
-    latest = spatial_gdf.sort_values("source_year").drop_duplicates("grid_id", keep="last").copy()
-    latest = latest.merge(table, on="grid_id", how="left", validate="one_to_one")
-    latest.to_file(map_output, driver="GeoJSON")
+    data = json.loads(spatial_map_path.read_text(encoding="utf-8"))
+    table_lookup = table.set_index("grid_id").to_dict(orient="index")
+    latest_by_grid: dict[str, dict] = {}
+    for feature in data.get("features", []):
+        props = feature.get("properties", {})
+        grid_id = str(props.get("grid_id"))
+        year = props.get("source_year", props.get("year", -1))
+        previous = latest_by_grid.get(grid_id)
+        previous_year = previous.get("properties", {}).get("source_year", previous.get("properties", {}).get("year", -1)) if previous else -1
+        if previous is None or int(year) >= int(previous_year):
+            latest_by_grid[grid_id] = feature
+
+    features = []
+    for grid_id, feature in latest_by_grid.items():
+        merged_props = dict(feature.get("properties", {}))
+        if grid_id in table_lookup:
+            for key, value in table_lookup[grid_id].items():
+                if pd.isna(value):
+                    merged_props[key] = None
+                elif isinstance(value, np.generic):
+                    merged_props[key] = value.item()
+                else:
+                    merged_props[key] = value
+        features.append({"type": "Feature", "properties": merged_props, "geometry": feature["geometry"]})
+
+    payload = {"type": "FeatureCollection", "features": features}
+    map_output.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     return {
-        "map_rows": int(len(latest)),
+        "map_rows": int(len(features)),
         "map_output": str(map_output),
     }
 

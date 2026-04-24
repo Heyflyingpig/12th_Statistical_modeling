@@ -67,7 +67,6 @@ def build_annual_evolution_summary() -> Path:
     ax2.set_ylabel("Global Moran's I", color="#1f77b4")
     ax1.set_xticks(merged["year"])
     ax1.grid(True, axis="y", linestyle="--", alpha=0.3)
-    ax1.set_title("Q1 Annual Evolution Summary (2019-2023)")
 
     lines = ax1.get_lines() + ax2.get_lines()
     labels = [line.get_label() for line in lines]
@@ -88,10 +87,8 @@ def build_lisa_comparison() -> Path:
         image_path = BY_YEAR_DIR / str(year) / "Q1_LISA_Map.png"
         image = mpimg.imread(image_path)
         ax.imshow(image)
-        ax.set_title(f"LISA clusters in {year}")
         ax.axis("off")
 
-    fig.suptitle("Q1 Residential-Risk Spatial Cluster Comparison: 2019 vs 2023", fontsize=16)
     fig.tight_layout()
     output_path = OUTPUT_DIR / "Q1_LISA_Comparison_2019_2023.png"
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
@@ -131,7 +128,6 @@ def build_district_risk_profile() -> Path:
 
     ax1.set_xlabel("Mean RVRI")
     ax2.set_xlabel("HH share")
-    ax1.set_title("Q1 District Risk Profile in 2023")
     ax1.grid(True, axis="x", linestyle="--", alpha=0.3)
 
     output_path = OUTPUT_DIR / "Q1_District_Risk_Profile_2023.png"

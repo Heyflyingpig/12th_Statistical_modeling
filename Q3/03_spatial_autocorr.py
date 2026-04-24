@@ -5,7 +5,6 @@ import json
 import sys
 from pathlib import Path
 
-import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.patches import Patch
@@ -25,12 +24,16 @@ from q3_utils import (
     compute_local_moran,
     ensure_q3_panel,
     ensure_spatial_weights,
+    filter_nodes_edges_to_domain,
     load_grid,
     save_geojson,
     save_json,
     setup_logging,
     update_summary,
 )
+
+
+DISTRICT_PATH = REPO_DIR / "Q1" / "data" / "shaoguan_districts_official.json"
 
 
 def build_argparser() -> argparse.ArgumentParser:
@@ -44,7 +47,6 @@ def plot_moran_trend(report: pd.DataFrame, output_path: Path) -> None:
     fig, ax = plt.subplots(figsize=(8, 4.8))
     ax.plot(report["year"], report["moran_i"], marker="o", linewidth=2.0, color="#b44d2d")
     ax.axhline(0.0, linestyle="--", linewidth=1.0, color="#555555")
-    ax.set_title("Annual Moran's I Trend")
     ax.set_xlabel("Year")
     ax.set_ylabel("Moran's I")
     ax.grid(alpha=0.25, linestyle=":")
@@ -53,24 +55,48 @@ def plot_moran_trend(report: pd.DataFrame, output_path: Path) -> None:
     plt.close(fig)
 
 
-def plot_lisa_map(latest_gdf: gpd.GeoDataFrame, output_path: Path) -> None:
+def _district_rings(path: Path) -> list[pd.DataFrame]:
+    if not path.exists():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    rings = []
+    for feature in data.get("features", []):
+        geometry = feature["geometry"]
+        if geometry["type"] == "Polygon":
+            rings.append(pd.DataFrame(geometry["coordinates"][0], columns=["x", "y"]))
+        elif geometry["type"] == "MultiPolygon":
+            for polygon in geometry["coordinates"]:
+                rings.append(pd.DataFrame(polygon[0], columns=["x", "y"]))
+    return rings
+
+
+def plot_lisa_map(latest_gdf: pd.DataFrame, output_path: Path) -> None:
     color_map = {
-        "HH": "#bb3e03",
-        "LL": "#3a86ff",
-        "HL": "#ffb703",
-        "LH": "#8ecae6",
+        "HH": "#e31a1c",
+        "LL": "#1f78b4",
+        "HL": "#fb9a99",
+        "LH": "#a6cee3",
         "NS": "#d9d9d9",
     }
     order = ["NS", "LL", "LH", "HL", "HH"]
+    legend_order = ["LL", "LH", "HL", "HH", "NS"]
     fig, ax = plt.subplots(figsize=(9, 9))
+    outside = latest_gdf.loc[~latest_gdf["in_analysis_domain"].fillna(False)]
+    if not outside.empty:
+        ax.scatter(outside["cx"], outside["cy"], s=1.0, c="#a6a6a6", alpha=0.45, linewidths=0)
     for label in order:
-        subset = latest_gdf.loc[latest_gdf["lisa_type"].fillna("NS") == label]
+        subset = latest_gdf.loc[
+            latest_gdf["in_analysis_domain"].fillna(False)
+            & latest_gdf["lisa_type"].fillna("NS").eq(label)
+        ]
         if subset.empty:
             continue
-        subset.plot(ax=ax, color=color_map[label], linewidth=0.02, edgecolor="white")
+        ax.scatter(subset["cx"], subset["cy"], s=2.2, c=color_map[label], alpha=0.78, linewidths=0)
+    for ring in _district_rings(DISTRICT_PATH):
+        ax.plot(ring["x"], ring["y"], color="#000000", linewidth=0.85, alpha=0.95, zorder=5)
     ax.set_axis_off()
-    ax.set_title("Q3 Latest-Year LISA Cluster Map")
-    legend_handles = [Patch(facecolor=color_map[item], edgecolor="none", label=item) for item in order]
+    ax.set_aspect("equal", adjustable="box")
+    legend_handles = [Patch(facecolor=color_map[item], edgecolor="none", label=item) for item in legend_order]
     ax.legend(handles=legend_handles, loc="lower left", frameon=True, title="LISA Type")
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
@@ -94,7 +120,17 @@ def main() -> None:
     for year in years:
         LOGGER.info("计算年度 Moran/LISA：year=%s", year)
         year_df = panel.loc[pd.to_numeric(panel["year"], errors="coerce").astype(int) == year].copy()
-        values = build_node_aligned_values(panel_year=year_df, nodes=nodes, value_col="rvri")
+        domain_df = year_df.loc[year_df["in_analysis_domain"].fillna(False)].copy()
+        domain_nodes, domain_edges, domain_weight_meta = filter_nodes_edges_to_domain(
+            nodes=nodes,
+            edges=edges,
+            domain_grid_ids=domain_df["grid_id"],
+        )
+        if domain_nodes.empty or domain_edges.empty:
+            raise RuntimeError(f"{year} 年统一空间分析样本为空，无法计算 Moran/LISA。")
+        src_idx = domain_edges["src_idx"].to_numpy(dtype=int)
+        dst_idx = domain_edges["dst_idx"].to_numpy(dtype=int)
+        values = build_node_aligned_values(panel_year=domain_df, nodes=domain_nodes, value_col="rvri")
         global_result = compute_global_moran(
             values=values,
             src_idx=src_idx,
@@ -110,7 +146,7 @@ def main() -> None:
             alpha=args.alpha,
             seed=20260500 + year,
         )
-        local_frame = pd.concat([nodes[["node_idx", "grid_id"]], local_result], axis=1)
+        local_frame = pd.concat([domain_nodes[["node_idx", "grid_id"]], local_result], axis=1)
         local_frame["year"] = year
         lisa_frames.append(local_frame)
 
@@ -127,6 +163,8 @@ def main() -> None:
                 "lh_count": int(type_counts.get("LH", 0)),
                 "ns_count": int(type_counts.get("NS", 0)),
                 "permutations": args.permutations,
+                "analysis_domain_rows": int(len(domain_df)),
+                "analysis_domain_edge_count": domain_weight_meta["directed_edge_count"],
             }
         )
         LOGGER.info(
@@ -150,14 +188,19 @@ def main() -> None:
 
     latest_year = int(report_df["year"].max())
     latest_lisa = lisa_panel.loc[lisa_panel["year"] == latest_year].copy()
-    latest_geo = grid.merge(latest_lisa, on="grid_id", how="left")
+    latest_domain = panel.loc[panel["year"].eq(latest_year), ["grid_id", "in_analysis_domain"]].copy()
+    latest_geo = grid.merge(latest_domain, on="grid_id", how="left").merge(latest_lisa, on="grid_id", how="left")
+    latest_geo["in_analysis_domain"] = (
+        latest_geo["in_analysis_domain"].where(latest_geo["in_analysis_domain"].notna(), False).astype(bool)
+    )
     save_geojson(latest_geo, latest_geojson_path)
     plot_lisa_map(latest_gdf=latest_geo, output_path=lisa_map_path)
 
     success_years = int(((report_df["moran_i"] > 0) & (report_df["permutation_p_value"] < 0.05)).sum())
     summary_payload = {
         "panel_input": panel_meta["input_path"],
-        "weight_node_count": weights_meta["node_count"],
+        "analysis_domain": panel_meta.get("analysis_domain"),
+        "full_weight_node_count": weights_meta["node_count"],
         "years": years,
         "significant_positive_years": success_years,
         "meets_moran_success_rule": bool(success_years >= 4),

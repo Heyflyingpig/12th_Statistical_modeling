@@ -5,8 +5,8 @@ import json
 import sys
 from pathlib import Path
 
-import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -25,6 +25,7 @@ from q3_utils import (
     LOGGER,
     OUTPUT_DIR,
     Q3_LISA_PANEL_PATH,
+    Q3_SUMMARY_PATH,
     Q3_SPATIAL_PANEL_PATH,
     attach_spatial_features,
     build_node_aligned_values,
@@ -32,6 +33,7 @@ from q3_utils import (
     compute_local_moran,
     ensure_q3_panel,
     ensure_spatial_weights,
+    filter_nodes_edges_to_domain,
     load_grid,
     save_json,
     setup_logging,
@@ -39,10 +41,16 @@ from q3_utils import (
 )
 
 
+DISTRICT_PATH = REPO_DIR / "Q1" / "data" / "shaoguan_districts_official.json"
+UPGRADE_EVENT_COL = "non_high_to_high_event"
+STATE_SHARE_COLUMNS = ["low_share", "mid_share", "high_share"]
+
+
 def build_argparser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="训练 Q3 下一年低风险转高风险预测模型。")
+    parser = argparse.ArgumentParser(description="训练 Q3 下一年非高风险转高风险预测模型。")
     parser.add_argument("--permutations", type=int, default=99, help="若需即时补算 LISA 时的置换次数。")
     parser.add_argument("--alpha", type=float, default=0.05, help="若需即时补算 LISA 时的显著性阈值。")
+    parser.add_argument("--projection-years", type=int, default=10, help="Markov 风险状态趋势外推年数，默认 10 年。")
     return parser
 
 
@@ -110,7 +118,14 @@ def ensure_lisa_features(
     for year in years:
         LOGGER.info("即时补算 LISA：year=%s", year)
         year_df = panel.loc[pd.to_numeric(panel["year"], errors="coerce").astype(int) == year].copy()
-        values = build_node_aligned_values(panel_year=year_df, nodes=nodes, value_col="rvri")
+        domain_nodes, domain_edges, _ = filter_nodes_edges_to_domain(
+            nodes=nodes,
+            edges=edges,
+            domain_grid_ids=year_df["grid_id"],
+        )
+        src_idx = domain_edges["src_idx"].to_numpy(dtype=int)
+        dst_idx = domain_edges["dst_idx"].to_numpy(dtype=int)
+        values = build_node_aligned_values(panel_year=year_df, nodes=domain_nodes, value_col="rvri")
         local_result = compute_local_moran(
             values=values,
             src_idx=src_idx,
@@ -119,7 +134,7 @@ def ensure_lisa_features(
             alpha=alpha,
             seed=20260600 + year,
         )
-        frame = pd.concat([nodes[["grid_id"]], local_result[["lisa_type"]]], axis=1)
+        frame = pd.concat([domain_nodes[["grid_id"]], local_result[["lisa_type"]]], axis=1)
         frame["year"] = year
         frames.append(frame)
     lisa_df = pd.concat(frames, ignore_index=True)
@@ -131,7 +146,10 @@ def ensure_lisa_features(
 def ensure_spatial_panel(panel: pd.DataFrame, edges: pd.DataFrame) -> pd.DataFrame:
     if Q3_SPATIAL_PANEL_PATH.exists():
         LOGGER.info("复用现成的空间特征面板缓存: %s", Q3_SPATIAL_PANEL_PATH)
-        return pd.read_csv(Q3_SPATIAL_PANEL_PATH, low_memory=False)
+        cached = pd.read_csv(Q3_SPATIAL_PANEL_PATH, low_memory=False)
+        if "in_analysis_domain" in cached.columns and len(cached) == len(panel):
+            return cached
+        LOGGER.info("空间特征面板缓存与当前统一分析域不一致，开始重新生成。")
     LOGGER.info("未检测到空间特征面板缓存，开始重新生成。")
     enriched = attach_spatial_features(panel=panel, edges=edges)
     enriched.to_csv(Q3_SPATIAL_PANEL_PATH, index=False, encoding="utf-8-sig")
@@ -139,25 +157,50 @@ def ensure_spatial_panel(panel: pd.DataFrame, edges: pd.DataFrame) -> pd.DataFra
     return enriched
 
 
-def plot_probability_map(prob_geo: gpd.GeoDataFrame, output_path: Path, title: str) -> None:
+def _district_rings(path: Path) -> list[pd.DataFrame]:
+    if not path.exists():
+        return []
+    data = json.loads(path.read_text(encoding="utf-8"))
+    rings = []
+    for feature in data.get("features", []):
+        geometry = feature["geometry"]
+        if geometry["type"] == "Polygon":
+            rings.append(pd.DataFrame(geometry["coordinates"][0], columns=["x", "y"]))
+        elif geometry["type"] == "MultiPolygon":
+            for polygon in geometry["coordinates"]:
+                rings.append(pd.DataFrame(polygon[0], columns=["x", "y"]))
+    return rings
+
+
+def plot_probability_map(prob_geo: pd.DataFrame, output_path: Path) -> None:
     fig, ax = plt.subplots(figsize=(9, 9))
-    prob_geo.plot(
-        ax=ax,
-        column="pred_probability",
+    scatter = ax.scatter(
+        prob_geo["cx"],
+        prob_geo["cy"],
+        c=prob_geo["pred_probability"],
         cmap="YlOrRd",
-        linewidth=0.02,
-        edgecolor="white",
-        legend=True,
-        legend_kwds={"label": "Predicted Probability"},
+        s=2.4,
+        alpha=0.82,
+        linewidths=0,
     )
+    fig.colorbar(scatter, ax=ax, fraction=0.035, pad=0.02, label="Predicted Probability")
     top_decile = prob_geo.loc[prob_geo["prob_rank_pct"] >= 0.9]
     if not top_decile.empty:
-        top_decile.boundary.plot(ax=ax, color="#5f0f40", linewidth=0.35)
+        ax.scatter(top_decile["cx"], top_decile["cy"], s=4.0, facecolors="none", edgecolors="#5f0f40", linewidths=0.35)
+    for ring in _district_rings(DISTRICT_PATH):
+        ax.plot(ring["x"], ring["y"], color="#000000", linewidth=0.85, alpha=0.95, zorder=5)
     ax.set_axis_off()
-    ax.set_title(title)
+    ax.set_aspect("equal", adjustable="box")
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches="tight")
     plt.close(fig)
+
+
+def build_upgrade_candidates(transition_df: pd.DataFrame) -> pd.DataFrame:
+    """Build the non-high-risk to high-risk upgrade target used by Q3 prediction."""
+    candidates = transition_df.loc[pd.to_numeric(transition_df["risk_state"], errors="coerce").ne(2)].copy()
+    candidates[UPGRADE_EVENT_COL] = pd.to_numeric(candidates["next_risk_state"], errors="coerce").eq(2).astype(int)
+    return candidates
 
 
 def add_probability_ranks(table: pd.DataFrame) -> pd.DataFrame:
@@ -165,6 +208,117 @@ def add_probability_ranks(table: pd.DataFrame) -> pd.DataFrame:
     ranked["prob_rank_pct"] = 1.0 - (ranked.index / max(len(ranked) - 1, 1))
     ranked["top_decile_flag"] = (ranked["prob_rank_pct"] >= 0.9).astype(int)
     return ranked
+
+
+def transition_probability_matrix(transition_df: pd.DataFrame) -> np.ndarray:
+    counts = (
+        transition_df.assign(
+            risk_state=pd.to_numeric(transition_df["risk_state"], errors="coerce"),
+            next_risk_state=pd.to_numeric(transition_df["next_risk_state"], errors="coerce"),
+        )
+        .dropna(subset=["risk_state", "next_risk_state"])
+        .assign(risk_state=lambda df: df["risk_state"].astype(int), next_risk_state=lambda df: df["next_risk_state"].astype(int))
+        .groupby(["risk_state", "next_risk_state"])
+        .size()
+        .rename("count")
+    )
+    matrix = counts.unstack(fill_value=0).reindex(index=range(3), columns=range(3), fill_value=0).to_numpy(dtype=float)
+    row_sum = matrix.sum(axis=1, keepdims=True)
+    zero_rows = np.isclose(row_sum.squeeze(), 0.0)
+    if zero_rows.any():
+        matrix[zero_rows] = np.eye(3)[zero_rows]
+        row_sum = matrix.sum(axis=1, keepdims=True)
+    return np.divide(matrix, row_sum, out=np.eye(3, dtype=float), where=row_sum > 0)
+
+
+def latest_state_distribution(panel: pd.DataFrame, base_year: int) -> np.ndarray:
+    latest = panel.loc[pd.to_numeric(panel["year"], errors="coerce").eq(base_year)].copy()
+    counts = (
+        pd.to_numeric(latest["risk_state"], errors="coerce")
+        .dropna()
+        .astype(int)
+        .value_counts()
+        .reindex(range(3), fill_value=0)
+        .to_numpy(dtype=float)
+    )
+    total = counts.sum()
+    if total == 0:
+        raise RuntimeError(f"{base_year} 年没有可用于趋势投影的风险状态样本。")
+    return counts / total
+
+
+def build_state_projection(
+    panel: pd.DataFrame,
+    transition_df: pd.DataFrame,
+    *,
+    base_year: int,
+    horizon_years: int,
+    scope: str = "overall",
+    group_name: str = "全域",
+) -> pd.DataFrame:
+    matrix = transition_probability_matrix(transition_df)
+    distribution = latest_state_distribution(panel, base_year=base_year)
+    rows = []
+    current = distribution.copy()
+    for horizon in range(horizon_years + 1):
+        rows.append(
+            {
+                "scope": scope,
+                "group_name": group_name,
+                "base_year": base_year,
+                "horizon": horizon,
+                "forecast_year": base_year + horizon,
+                "low_share": float(current[0]),
+                "mid_share": float(current[1]),
+                "high_share": float(current[2]),
+            }
+        )
+        current = current @ matrix
+    return pd.DataFrame(rows)
+
+
+def build_district_state_projection(
+    panel: pd.DataFrame,
+    transition_df: pd.DataFrame,
+    *,
+    base_year: int,
+    horizon_years: int,
+) -> pd.DataFrame:
+    frames = []
+    for district_name, district_panel in panel.groupby("district_name", dropna=False):
+        district_transition = transition_df.loc[transition_df["district_name"].eq(district_name)].copy()
+        if district_transition.empty:
+            continue
+        frames.append(
+            build_state_projection(
+                panel=district_panel,
+                transition_df=district_transition,
+                base_year=base_year,
+                horizon_years=horizon_years,
+                scope="district",
+                group_name=str(district_name),
+            )
+        )
+    if not frames:
+        return pd.DataFrame(columns=["scope", "group_name", "base_year", "horizon", "forecast_year", *STATE_SHARE_COLUMNS])
+    return pd.concat(frames, ignore_index=True)
+
+
+def plot_state_projection(projection: pd.DataFrame, output_path: Path) -> None:
+    overall = projection.loc[projection["scope"].eq("overall")].sort_values("horizon")
+    fig, ax = plt.subplots(figsize=(8.5, 5.2))
+    ax.plot(overall["forecast_year"], overall["low_share"], marker="o", linewidth=2.0, label="Low risk")
+    ax.plot(overall["forecast_year"], overall["mid_share"], marker="o", linewidth=2.0, label="Medium risk")
+    ax.plot(overall["forecast_year"], overall["high_share"], marker="o", linewidth=2.0, label="High risk")
+    ax.set_xlabel("Forecast year")
+    ax.set_ylabel("Projected share")
+    ax.set_ylim(0, 1)
+    ax.yaxis.set_major_formatter(lambda value, _: f"{value:.0%}")
+    ax.grid(axis="y", linestyle="--", alpha=0.3)
+    ax.legend(frameon=False, ncol=3, loc="upper center", bbox_to_anchor=(0.5, -0.12))
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
 
 def attach_state_boundary_features(feature_panel: pd.DataFrame) -> pd.DataFrame:
@@ -211,15 +365,15 @@ def evaluate_time_split(
     test_df: pd.DataFrame,
     feature_columns: list[str],
 ) -> tuple[pd.DataFrame, dict[str, float | int | bool | None | list[str] | str]]:
-    if train_df["low_to_high_event"].nunique() < 2:
-        raise RuntimeError("训练样本中缺少 0->2 正负两类事件，无法训练 Pooled Logistic 模型。")
+    if train_df[UPGRADE_EVENT_COL].nunique() < 2:
+        raise RuntimeError("训练样本中缺少非高风险->高风险的正负两类事件，无法训练 Pooled Logistic 模型。")
     if test_df.empty:
         raise RuntimeError("未找到时间回测测试样本，无法评估预测模块。")
 
     X_train = train_df[feature_columns]
-    y_train = train_df["low_to_high_event"].astype(int)
+    y_train = train_df[UPGRADE_EVENT_COL].astype(int)
     X_test = test_df[feature_columns]
-    y_test = test_df["low_to_high_event"].astype(int)
+    y_test = test_df[UPGRADE_EVENT_COL].astype(int)
 
     model.fit(X_train, y_train)
     pred_probability = model.predict_proba(X_test)[:, 1]
@@ -233,7 +387,7 @@ def evaluate_time_split(
     top_n = max(1, int(len(scored_test) * 0.1))
     top_df = scored_test.head(top_n).copy()
     base_rate = float(y_test.mean())
-    top_hit_rate = float(top_df["low_to_high_event"].mean())
+    top_hit_rate = float(top_df[UPGRADE_EVENT_COL].mean())
     lift_at_10 = float(top_hit_rate / base_rate) if base_rate > 0 else None
 
     evaluation_payload: dict[str, float | int | bool | None | list[str] | str] = {
@@ -251,7 +405,7 @@ def evaluate_time_split(
         "meets_auc_rule": bool(auc is not None and auc >= 0.70),
         "meets_lift_rule": bool(lift_at_10 is not None and lift_at_10 >= 2.0),
     }
-    evaluation_payload.update(summarize_top_decile(scored_test, label_col="low_to_high_event"))
+    evaluation_payload.update(summarize_top_decile(scored_test, label_col=UPGRADE_EVENT_COL))
     return scored_test, evaluation_payload
 
 
@@ -272,12 +426,14 @@ def extract_model_coefficients(model: Pipeline) -> tuple[list[dict[str, object]]
 def main() -> None:
     setup_logging()
     args = build_argparser().parse_args()
-    LOGGER.info("开始执行 Q3 Step 6：下一年低转高预测。")
+    LOGGER.info("开始执行 Q3 Step 6：下一年非高风险转高风险预测。")
     panel, transition, _ = ensure_q3_panel()
     nodes, edges, _ = ensure_spatial_weights()
-    spatial_panel = ensure_spatial_panel(panel=panel, edges=edges)
+    panel_domain = panel.loc[panel["in_analysis_domain"].fillna(False)].copy()
+    transition_domain = transition.loc[transition["in_analysis_domain"].fillna(False)].copy()
+    spatial_panel = ensure_spatial_panel(panel=panel_domain, edges=edges)
     lisa_panel = ensure_lisa_features(
-        panel=panel,
+        panel=panel_domain,
         nodes=nodes,
         edges=edges,
         permutations=args.permutations,
@@ -293,7 +449,7 @@ def main() -> None:
     feature_panel["is_edge_zone"] = feature_panel["lisa_type"].isin(["HL", "LH"]).astype(int)
     feature_panel = attach_state_boundary_features(feature_panel)
 
-    transition_model = transition.merge(
+    transition_model = transition_domain.merge(
         feature_panel[
             [
                 "grid_id",
@@ -314,21 +470,21 @@ def main() -> None:
         how="left",
     )
 
-    candidates = transition_model.loc[transition_model["risk_state"] == 0].copy()
+    candidates = build_upgrade_candidates(transition_model)
     backtest_train_df = candidates.loc[candidates["year"].isin([2019, 2020, 2021])].copy()
     backtest_test_df = candidates.loc[candidates["year"] == 2022].copy()
     final_train_df = candidates.loc[candidates["year"].isin([2019, 2020, 2021, 2022])].copy()
 
-    prediction_base_year = int(pd.to_numeric(panel["year"], errors="coerce").max())
+    prediction_base_year = int(pd.to_numeric(panel_domain["year"], errors="coerce").max())
     prediction_target_year = prediction_base_year + 1
     scoring_df = feature_panel.loc[
-        feature_panel["year"].eq(prediction_base_year) & feature_panel["risk_state"].eq(0)
+        feature_panel["year"].eq(prediction_base_year) & pd.to_numeric(feature_panel["risk_state"], errors="coerce").ne(2)
     ].copy()
     if scoring_df.empty:
-        raise RuntimeError(f"未找到 {prediction_base_year} 年的低风险候选格网，无法输出真实下一年预测。")
+        raise RuntimeError(f"未找到 {prediction_base_year} 年的非高风险候选格网，无法输出真实下一年预测。")
 
     LOGGER.info(
-        "低转高候选样本已就绪: backtest_train_rows=%s, backtest_test_rows=%s, final_train_rows=%s, scoring_rows=%s",
+        "非高风险转高风险候选样本已就绪: backtest_train_rows=%s, backtest_test_rows=%s, final_train_rows=%s, scoring_rows=%s",
         len(backtest_train_df),
         len(backtest_test_df),
         len(final_train_df),
@@ -377,7 +533,7 @@ def main() -> None:
         categorical_features=categorical_features,
     )
     final_X = final_train_df[feature_columns]
-    final_y = final_train_df["low_to_high_event"].astype(int)
+    final_y = final_train_df[UPGRADE_EVENT_COL].astype(int)
     final_model.fit(final_X, final_y)
     LOGGER.info(
         "最终预测模型训练完成，将基于 %s 年截面输出 %s 年风险概率。",
@@ -399,6 +555,7 @@ def main() -> None:
         "target_year",
         "year",
         "risk_state",
+        "prediction_scope",
         "rvri",
         "mismatch_gap",
         "delta_rvri",
@@ -413,11 +570,15 @@ def main() -> None:
         "prob_rank_pct",
         "top_decile_flag",
     ]
-    output_csv_path = OUTPUT_DIR / "low_to_high_prob_next_year.csv"
-    output_geojson_path = OUTPUT_DIR / "low_to_high_prob_next_year.geojson"
-    output_map_path = OUTPUT_DIR / "Q3_LowToHigh_Risk_Map.png"
+    output_csv_path = OUTPUT_DIR / "non_high_to_high_prob_next_year.csv"
+    output_geojson_path = OUTPUT_DIR / "non_high_to_high_prob_next_year.geojson"
+    output_map_path = OUTPUT_DIR / "Q3_NonHighToHigh_Risk_Map.png"
     report_path = OUTPUT_DIR / "q3_prediction_report.json"
+    projection_csv_path = OUTPUT_DIR / "q3_risk_state_projection_10yr.csv"
+    projection_json_path = OUTPUT_DIR / "q3_risk_state_projection_10yr.json"
+    projection_plot_path = OUTPUT_DIR / "Q3_Risk_State_Projection_10yr.png"
 
+    scoring_df["prediction_scope"] = "non_high_to_high"
     result_table = scoring_df[output_columns].copy()
     result_table.to_csv(output_csv_path, index=False, encoding="utf-8-sig")
 
@@ -426,17 +587,47 @@ def main() -> None:
     plot_probability_map(
         prob_geo=prob_geo,
         output_path=output_map_path,
-        title=f"Predicted {prediction_target_year} Low-to-High Risk (from {prediction_base_year} Baseline)",
     )
 
     top_n_prediction = max(1, int(len(result_table) * 0.1))
     top_prediction = result_table.head(top_n_prediction).copy()
     top_decile_threshold = float(top_prediction["pred_probability"].min()) if not top_prediction.empty else None
     future_top_decile_summary = summarize_top_decile(result_table)
+    overall_projection = build_state_projection(
+        panel=panel_domain,
+        transition_df=transition_domain,
+        base_year=prediction_base_year,
+        horizon_years=args.projection_years,
+    )
+    district_projection = build_district_state_projection(
+        panel=panel_domain,
+        transition_df=transition_domain,
+        base_year=prediction_base_year,
+        horizon_years=args.projection_years,
+    )
+    projection_table = pd.concat([overall_projection, district_projection], ignore_index=True)
+    projection_table.to_csv(projection_csv_path, index=False, encoding="utf-8-sig")
+    projection_summary = {
+        "projection_method": "markov_state_share_projection",
+        "interpretation": "scenario_trend_not_precise_long_range_forecast",
+        "base_year": prediction_base_year,
+        "horizon_years": args.projection_years,
+        "overall_final_year": int(overall_projection["forecast_year"].max()),
+        "overall_final_state_share": overall_projection.loc[
+            overall_projection["horizon"].eq(args.projection_years),
+            STATE_SHARE_COLUMNS,
+        ].iloc[0].to_dict(),
+        "district_count": int(district_projection["group_name"].nunique()) if not district_projection.empty else 0,
+        "projection_csv_path": str(projection_csv_path.relative_to(REPO_DIR)),
+        "projection_plot_path": str(projection_plot_path.relative_to(REPO_DIR)),
+    }
+    save_json(projection_json_path, projection_summary)
+    plot_state_projection(projection_table, projection_plot_path)
 
     report_payload = {
         "model_spec": {
             "model_family": "pooled_logistic_regression",
+            "prediction_target": "non_high_to_high",
             "class_weight": None,
             "numeric_features": numeric_features,
             "categorical_features": categorical_features,
@@ -450,6 +641,7 @@ def main() -> None:
         "future_prediction": {
             "prediction_base_year": prediction_base_year,
             "predicted_target_year": prediction_target_year,
+            "prediction_scope": "non_high_to_high",
             "scored_rows": int(len(result_table)),
             "mean_pred_probability": float(result_table["pred_probability"].mean()),
             "top_decile_threshold": top_decile_threshold,
@@ -458,9 +650,13 @@ def main() -> None:
         },
         "top_positive_features": top_positive_features,
         "top_negative_features": top_negative_features,
+        "state_share_projection": projection_summary,
         "output_csv_path": str(output_csv_path.relative_to(REPO_DIR)),
         "output_geojson_path": str(output_geojson_path.relative_to(REPO_DIR)),
         "output_map_path": str(output_map_path.relative_to(REPO_DIR)),
+        "projection_csv_path": str(projection_csv_path.relative_to(REPO_DIR)),
+        "projection_json_path": str(projection_json_path.relative_to(REPO_DIR)),
+        "projection_plot_path": str(projection_plot_path.relative_to(REPO_DIR)),
     }
     save_json(report_path, report_payload)
 
@@ -469,19 +665,27 @@ def main() -> None:
         "output_csv_path": str(output_csv_path.relative_to(REPO_DIR)),
         "output_geojson_path": str(output_geojson_path.relative_to(REPO_DIR)),
         "output_map_path": str(output_map_path.relative_to(REPO_DIR)),
+        "projection_csv_path": str(projection_csv_path.relative_to(REPO_DIR)),
+        "projection_json_path": str(projection_json_path.relative_to(REPO_DIR)),
+        "projection_plot_path": str(projection_plot_path.relative_to(REPO_DIR)),
         "prediction_base_year": prediction_base_year,
         "predicted_target_year": prediction_target_year,
+        "prediction_scope": "non_high_to_high",
         "scored_rows": int(len(result_table)),
         "roc_auc": backtest_payload["roc_auc"],
         "lift_at_10_percent": backtest_payload["lift_at_10_percent"],
         "top_10_percent_hit_rate": backtest_payload["top_10_percent_hit_rate"],
         "meets_auc_rule": backtest_payload["meets_auc_rule"],
         "meets_lift_rule": backtest_payload["meets_lift_rule"],
+        "projection_horizon_years": args.projection_years,
+        "projection_final_high_share": projection_summary["overall_final_state_share"]["high_share"],
     }
-    update_summary("low_to_high_prediction", summary_payload)
+    summary = update_summary("non_high_to_high_prediction", summary_payload)
+    summary.pop("low_to_high_prediction", None)
+    save_json(Q3_SUMMARY_PATH, summary)
     LOGGER.info("Q3 Step 6 完成，预测结果已更新到输出目录。")
 
-    print("Q3 下一年低转高预测完成。")
+    print("Q3 下一年非高风险转高风险预测完成。")
     print(json.dumps(summary_payload, ensure_ascii=False, indent=2))
 
 

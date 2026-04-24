@@ -44,7 +44,6 @@ def plot_spatial_markov_comparison(compare_df: pd.DataFrame, output_path: Path) 
     ax.set_xticks(list(x), pivot.index.tolist())
     ax.set_xlabel("Neighbor Risk Context")
     ax.set_ylabel("Transition Probability")
-    ax.set_title("Spatial Markov Upgrade Comparison")
     ax.grid(axis="y", alpha=0.2, linestyle=":")
     ax.legend()
     fig.tight_layout()
@@ -59,10 +58,12 @@ def main() -> None:
     panel, transition, _ = ensure_q3_panel()
     _, edges, _ = ensure_spatial_weights()
 
-    panel_spatial = attach_spatial_features(panel=panel, edges=edges)
+    panel_domain = panel.loc[panel["in_analysis_domain"].fillna(False)].copy()
+    transition_domain = transition.loc[transition["in_analysis_domain"].fillna(False)].copy()
+    panel_spatial = attach_spatial_features(panel=panel_domain, edges=edges)
     panel_spatial.to_csv(Q3_SPATIAL_PANEL_PATH, index=False, encoding="utf-8-sig")
 
-    transition_spatial = transition.merge(
+    transition_spatial = transition_domain.merge(
         panel_spatial[
             ["grid_id", "year", "spatial_lag_rvri", "neighbor_high_ratio", "neighbor_count", "neighbor_env_level"]
         ],
@@ -97,6 +98,8 @@ def main() -> None:
         "panel_spatial_path": str(Q3_SPATIAL_PANEL_PATH.relative_to(REPO_DIR)),
         "spatial_markov_matrix_path": str(spatial_matrix_path.relative_to(REPO_DIR)),
         "comparison_plot_path": str(comparison_plot_path.relative_to(REPO_DIR)),
+        "analysis_domain_rows": int(len(panel_domain)),
+        "analysis_domain_transition_rows": int(len(transition_domain)),
         "high_vs_low": {
             "p_0_to_2_high": float(compare_pivot.loc["high", "0->2"]),
             "p_0_to_2_low": float(compare_pivot.loc["low", "0->2"]),

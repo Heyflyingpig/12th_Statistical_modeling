@@ -2,16 +2,23 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Any
 
-import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.strtree import STRtree
-
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.append(str(ROOT_DIR))
+
+from analysis_domain import (
+    ANALYSIS_DOMAIN_NAME,
+    attach_unified_analysis_domain,
+    summarize_unified_analysis_domain,
+)
+
 Q1_DIR = ROOT_DIR / "Q1"
 Q3_DIR = ROOT_DIR / "Q3"
 OUTPUT_DIR = Q3_DIR / "output"
@@ -254,6 +261,7 @@ def prepare_q3_panel(input_path: str | None = None) -> tuple[pd.DataFrame, pd.Da
     LOGGER.info("开始准备 Q3 年度面板。")
     panel, metadata = load_q1_panel(input_path=input_path)
     panel = panel.sort_values(["grid_id", "year"]).drop_duplicates(["grid_id", "year"])
+    panel = attach_unified_analysis_domain(panel, year_col="year")
 
     # 用上一年差分补足趋势特征，首年无法计算时记为 0，便于后续模型直接使用。
     panel["delta_rvri"] = panel.groupby("grid_id")["rvri"].diff().fillna(0.0)
@@ -276,6 +284,7 @@ def prepare_q3_panel(input_path: str | None = None) -> tuple[pd.DataFrame, pd.Da
         {
             "prepared_rows": int(len(panel)),
             "prepared_grid_count": int(panel["grid_id"].nunique()),
+            "analysis_domain": summarize_unified_analysis_domain(panel, year_col="year"),
             "transition_rows": int(len(transition)),
             "transition_year_pairs": sorted(
                 transition[["year", "next_year"]]
@@ -315,6 +324,21 @@ def ensure_q3_panel(input_path: str | None = None) -> tuple[pd.DataFrame, pd.Dat
         panel = pd.read_csv(Q3_PANEL_PATH, low_memory=False)
         transition = pd.read_csv(Q3_TRANSITION_PATH, low_memory=False)
         metadata = read_json(metadata_path)
+        if "in_analysis_domain" not in panel.columns:
+            LOGGER.info("Q3 面板缓存缺少统一分析域字段，开始补充。")
+            panel = attach_unified_analysis_domain(panel, year_col="year")
+            adjacent_mask = panel["is_adjacent_transition"].eq(True) | panel["is_adjacent_transition"].astype(str).str.lower().eq("true")
+            transition = panel.loc[adjacent_mask].copy()
+            transition["next_year"] = transition["next_year"].astype(int)
+            transition["next_risk_state"] = transition["next_risk_state"].astype(int)
+            transition["transition_label"] = (
+                transition["risk_state"].astype(str) + "->" + transition["next_risk_state"].astype(str)
+            )
+            transition["low_to_high_event"] = (
+                (transition["risk_state"] == 0) & (transition["next_risk_state"] == 2)
+            ).astype(int)
+            metadata["analysis_domain"] = summarize_unified_analysis_domain(panel, year_col="year")
+            save_q3_panel_outputs(panel=panel, transition=transition, metadata=metadata)
         return panel, transition, metadata
     LOGGER.info("未找到完整的 Q3 面板缓存，开始重新生成。")
     panel, transition, metadata = prepare_q3_panel(input_path=input_path)
@@ -322,51 +346,98 @@ def ensure_q3_panel(input_path: str | None = None) -> tuple[pd.DataFrame, pd.Dat
     return panel, transition, metadata
 
 
-def load_grid(grid_path: str | None = None) -> gpd.GeoDataFrame:
+def _representative_center(geometry: dict[str, Any]) -> tuple[float, float]:
+    coords = geometry["coordinates"]
+    if geometry["type"] == "Polygon":
+        ring = np.asarray(coords[0], dtype=float)
+    elif geometry["type"] == "MultiPolygon":
+        ring = np.asarray(coords[0][0], dtype=float)
+    else:
+        point = np.asarray(coords[:2], dtype=float)
+        return float(point[0]), float(point[1])
+    center = ring.mean(axis=0)
+    return float(center[0]), float(center[1])
+
+
+def _build_affine_grid_frame(features: list[dict[str, Any]]) -> pd.DataFrame:
+    origin_feature = min(features, key=lambda feature: sum(feature["geometry"]["coordinates"][0][0]))
+    ring = origin_feature["geometry"]["coordinates"][0]
+    origin = np.array(ring[0], dtype=float)
+    v_col = np.array(ring[1], dtype=float) - origin
+    v_row = np.array(ring[3], dtype=float) - origin
+    matrix_inv = np.linalg.inv(np.column_stack([v_col, v_row]))
+
+    rows: list[dict[str, Any]] = []
+    for feature in features:
+        geometry = feature["geometry"]
+        props = feature.get("properties", {})
+        if geometry["type"] == "Polygon":
+            anchor = np.array(geometry["coordinates"][0][0], dtype=float)
+        elif geometry["type"] == "MultiPolygon":
+            anchor = np.array(geometry["coordinates"][0][0][0], dtype=float)
+        else:
+            continue
+        col, row = np.rint(matrix_inv @ (anchor - origin)).astype(int)
+        cx, cy = _representative_center(geometry)
+        rows.append(
+            {
+                "grid_id": str(props["grid_id"]),
+                "district": props.get("district"),
+                "col": int(col),
+                "row": int(row),
+                "cx": cx,
+                "cy": cy,
+                "geometry": geometry,
+            }
+        )
+    return pd.DataFrame(rows).drop_duplicates(subset=["grid_id"]).reset_index(drop=True)
+
+
+def load_grid(grid_path: str | None = None) -> pd.DataFrame:
     path = Path(grid_path) if grid_path else DEFAULT_GRID_PATH
     if not path.is_absolute():
         path = ROOT_DIR / path
     if not path.exists():
         raise FileNotFoundError(f"未找到格网文件: {path}")
-    grid = gpd.read_file(path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    grid = _build_affine_grid_frame(data["features"])
     if "grid_id" not in grid.columns:
         raise ValueError("scientific_grid_500m.geojson 缺少 grid_id 字段。")
     grid = grid.copy()
     grid["grid_id"] = grid["grid_id"].astype(str)
     grid = grid.drop_duplicates(subset=["grid_id"]).reset_index(drop=True)
-    LOGGER.info("格网读取完成: path=%s, rows=%s, crs=%s", path, len(grid), grid.crs)
+    LOGGER.info("格网读取完成: path=%s, rows=%s", path, len(grid))
     return grid
 
 
 def build_spatial_weights(
-    grid: gpd.GeoDataFrame,
+    grid: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
-    # 500m 规则格网适合直接用 STRtree 查询 touches 关系，速度快且不依赖 libpysal。
+    # 500m 规则格网可直接用仿射行列号构造 Queen 邻接，避免依赖额外 GIS 库。
     LOGGER.info("开始构建空间邻接权重: grid_rows=%s", len(grid))
-    geom_array = np.asarray(grid.geometry.values)
-    tree = STRtree(geom_array)
-    query_result = tree.query(geom_array, predicate="touches")
-    if isinstance(query_result, tuple):
-        src_idx = query_result[0].astype(np.int32)
-        dst_idx = query_result[1].astype(np.int32)
-    elif isinstance(query_result, np.ndarray) and query_result.ndim == 2 and query_result.shape[0] == 2:
-        src_idx = query_result[0].astype(np.int32)
-        dst_idx = query_result[1].astype(np.int32)
-    else:
-        src_idx = np.repeat(np.arange(len(grid), dtype=np.int32), [len(x) for x in query_result])
-        dst_idx = np.concatenate(query_result).astype(np.int32)
-
-    mask = src_idx != dst_idx
-    src_idx = src_idx[mask]
-    dst_idx = dst_idx[mask]
+    coord_to_idx = {
+        (int(row.col), int(row.row)): idx
+        for idx, row in enumerate(grid[["col", "row"]].itertuples(index=False))
+    }
+    src_idx: list[int] = []
+    dst_idx: list[int] = []
+    for idx, row in enumerate(grid[["col", "row"]].itertuples(index=False)):
+        for d_col in (-1, 0, 1):
+            for d_row in (-1, 0, 1):
+                if d_col == 0 and d_row == 0:
+                    continue
+                neighbor = coord_to_idx.get((int(row.col) + d_col, int(row.row) + d_row))
+                if neighbor is not None:
+                    src_idx.append(idx)
+                    dst_idx.append(neighbor)
     grid_ids = grid["grid_id"].to_numpy()
 
     edges = pd.DataFrame(
         {
-            "src_idx": src_idx,
-            "dst_idx": dst_idx,
-            "src_grid_id": grid_ids[src_idx],
-            "dst_grid_id": grid_ids[dst_idx],
+            "src_idx": np.asarray(src_idx, dtype=np.int32),
+            "dst_idx": np.asarray(dst_idx, dtype=np.int32),
+            "src_grid_id": grid_ids[np.asarray(src_idx, dtype=np.int32)],
+            "dst_grid_id": grid_ids[np.asarray(dst_idx, dtype=np.int32)],
         }
     ).drop_duplicates(ignore_index=True)
 
@@ -439,6 +510,35 @@ def build_node_aligned_values(
             fill_value = 0.0
         values = np.where(np.isnan(values), fill_value, values)
     return values
+
+
+def filter_nodes_edges_to_domain(
+    nodes: pd.DataFrame,
+    edges: pd.DataFrame,
+    domain_grid_ids: pd.Series | list[str] | set[str],
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+    domain_ids = {str(grid_id) for grid_id in domain_grid_ids}
+    domain_nodes = nodes[nodes["grid_id"].astype(str).isin(domain_ids)].copy()
+    domain_nodes = domain_nodes.sort_values("node_idx").reset_index(drop=True)
+    old_to_new = {int(old_idx): int(new_idx) for new_idx, old_idx in enumerate(domain_nodes["node_idx"])}
+    domain_edges = edges[
+        edges["src_idx"].astype(int).isin(old_to_new)
+        & edges["dst_idx"].astype(int).isin(old_to_new)
+    ].copy()
+    domain_edges["src_idx"] = domain_edges["src_idx"].astype(int).map(old_to_new).astype(np.int32)
+    domain_edges["dst_idx"] = domain_edges["dst_idx"].astype(int).map(old_to_new).astype(np.int32)
+    domain_nodes["node_idx"] = np.arange(len(domain_nodes), dtype=np.int32)
+    degree = domain_edges.groupby("src_idx").size()
+    summary = {
+        "domain_name": ANALYSIS_DOMAIN_NAME,
+        "node_count": int(len(domain_nodes)),
+        "directed_edge_count": int(len(domain_edges)),
+        "undirected_edge_count_estimate": int(len(domain_edges) // 2),
+        "min_degree": int(degree.min()) if not degree.empty else 0,
+        "max_degree": int(degree.max()) if not degree.empty else 0,
+        "mean_degree": float(degree.mean()) if not degree.empty else 0.0,
+    }
+    return domain_nodes, domain_edges, summary
 
 
 def compute_row_standardized_lag(
@@ -626,9 +726,23 @@ def attach_spatial_features(
     return panel
 
 
-def save_geojson(gdf: gpd.GeoDataFrame, path: Path) -> None:
+def _json_safe(value: Any) -> Any:
+    if pd.isna(value):
+        return None
+    if isinstance(value, np.generic):
+        return value.item()
+    return value
+
+
+def save_geojson(gdf: pd.DataFrame, path: Path) -> None:
     ensure_output_dir()
-    path.write_text(gdf.to_json(drop_id=True), encoding="utf-8")
+    features = []
+    for row in gdf.to_dict(orient="records"):
+        geometry = row.pop("geometry")
+        properties = {key: _json_safe(value) for key, value in row.items()}
+        features.append({"type": "Feature", "properties": properties, "geometry": geometry})
+    payload = {"type": "FeatureCollection", "features": features}
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     LOGGER.info("GeoJSON 已写出: %s, rows=%s", path, len(gdf))
 
 
@@ -687,10 +801,10 @@ def matrix_power_summary(matrix: np.ndarray, powers: list[int]) -> dict[str, Any
 
 
 def build_probability_geojson(
-    grid: gpd.GeoDataFrame,
+    grid: pd.DataFrame,
     table: pd.DataFrame,
     path: Path,
-) -> gpd.GeoDataFrame:
+) -> pd.DataFrame:
     merged = grid.merge(table, on="grid_id", how="inner")
     save_geojson(merged, path)
     LOGGER.info("概率结果空间图层生成完成: rows=%s", len(merged))

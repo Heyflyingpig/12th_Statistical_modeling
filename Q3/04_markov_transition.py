@@ -49,6 +49,7 @@ def main() -> None:
     build_argparser().parse_args()
     LOGGER.info("开始执行 Q3 Step 4：Markov 转移分析。")
     _, transition, panel_meta = ensure_q3_panel()
+    transition = transition.loc[transition["in_analysis_domain"].fillna(False)].copy()
     transition["risk_state"] = pd.to_numeric(transition["risk_state"], errors="coerce").astype(int)
     transition["next_risk_state"] = pd.to_numeric(transition["next_risk_state"], errors="coerce").astype(int)
 
@@ -65,6 +66,7 @@ def main() -> None:
     matrix = matrix_from_long(overall_matrix)
     k_step_payload = {
         "input_path": panel_meta["input_path"],
+        "analysis_domain": panel_meta.get("analysis_domain"),
         "transition_rows": int(len(transition)),
         "overall_matrix": matrix.round(6).tolist(),
         **matrix_power_summary(matrix=matrix, powers=[2, 3]),
