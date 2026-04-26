@@ -143,11 +143,11 @@
     "predicted_target_year": 2024,
     "prediction_scope": "non_high_to_high",
     "scored_rows": 6373,
-    "roc_auc": 0.6482779031418155,
-    "lift_at_10_percent": 1.5871532278973293,
-    "top_10_percent_hit_rate": 0.4029038112522686,
-    "meets_auc_rule": false,
-    "meets_lift_rule": false,
+    "roc_auc": 0.7613,
+    "lift_at_10_percent": 2.374995357142857,
+    "top_10_percent_hit_rate": 0.6029,
+    "meets_auc_rule": true,
+    "meets_lift_rule": true,
     "projection_horizon_years": 10,
     "projection_final_high_share": 0.7017988859949493
   }
